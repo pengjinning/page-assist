@@ -1,8 +1,9 @@
-import {
-    HumanMessage,
-    AIMessage,
-    type MessageContent,
-} from "@langchain/core/messages"
+// import {
+//     HumanMessage,
+//     AIMessage,
+//     type MessageContent,
+// } from "@langchain/core/messages"
+import { HumanMessage, AIMessage, type MessageContent } from "langchain/schema"
 
 export const generateHistory = (
     messages: {

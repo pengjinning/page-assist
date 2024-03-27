@@ -8,7 +8,8 @@ import {
 } from "~/services/ollama"
 import { useStoreMessage, type Message } from "~/store"
 import { ChatOllama } from "@langchain/community/chat_models/ollama"
-import { HumanMessage, SystemMessage } from "@langchain/core/messages"
+// import { HumanMessage, SystemMessage } from "@langchain/core/messages"
+import { HumanMessage, SystemMessage } from "langchain/schema"
 import { getDataFromCurrentTab } from "~/libs/get-html"
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama"
 import {

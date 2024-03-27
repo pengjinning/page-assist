@@ -7,7 +7,8 @@ import {
 } from "~/services/ollama"
 import { type ChatHistory, type Message } from "~/store/option"
 import { ChatOllama } from "@langchain/community/chat_models/ollama"
-import { HumanMessage, SystemMessage } from "@langchain/core/messages"
+// import { HumanMessage, SystemMessage } from "@langchain/core/messages"
+import { HumanMessage, SystemMessage } from "langchain/schema"
 import { useStoreMessageOption } from "~/store/option"
 import {
   deleteChatForEdit,

@@ -1,5 +1,6 @@
 import { BaseDocumentLoader } from "langchain/document_loaders/base"
-import { Document } from "@langchain/core/documents"
+// import { Document } from "@langchain/core/documents"
+import { Document } from "langchain/document"
 export interface WebLoaderParams {
     pdf: { content: string, page: number }[]
     url: string
