@@ -2,10 +2,21 @@ import React from "react"
 import { PlaygroundMessage } from "~/components/Common/Playground/Message"
 import { useMessage } from "~/hooks/useMessage"
 import { EmptySidePanel } from "../Chat/empty"
+import { useWebUI } from "@/store/webui"
+import { MessageSourcePopup } from "@/components/Common/Playground/MessageSourcePopup"
 
 export const SidePanelBody = () => {
-  const { messages, streaming } = useMessage()
+  const {
+    messages,
+    streaming,
+    regenerateLastMessage,
+    editMessage,
+    isSearchingInternet
+  } = useMessage()
   const divRef = React.useRef<HTMLDivElement>(null)
+  const [isSourceOpen, setIsSourceOpen] = React.useState(false)
+  const [source, setSource] = React.useState<any>(null)
+  const { ttsEnabled } = useWebUI()
   React.useEffect(() => {
     if (divRef.current) {
       divRef.current.scrollIntoView({ behavior: "smooth" })
@@ -16,7 +27,6 @@ export const SidePanelBody = () => {
       {messages.length === 0 && <EmptySidePanel />}
       {messages.map((message, index) => (
         <PlaygroundMessage
-        onEditFormSubmit={(value) => {}}
           key={index}
           isBot={message.isBot}
           message={message.message}
@@ -24,13 +34,29 @@ export const SidePanelBody = () => {
           images={message.images || []}
           currentMessageIndex={index}
           totalMessages={messages.length}
-          onRengerate={() => {}}
+          onRengerate={regenerateLastMessage}
+          message_type={message.messageType}
           isProcessing={streaming}
-          hideEditAndRegenerate
+          isSearchingInternet={isSearchingInternet}
+          sources={message.sources}
+          onEditFormSubmit={(value) => {
+            editMessage(index, value, !message.isBot)
+          }}
+          onSourceClick={(data) => {
+            setSource(data)
+            setIsSourceOpen(true)
+          }}
+          isTTSEnabled={ttsEnabled}
+          generationInfo={message?.generationInfo}
         />
       ))}
-      <div className="w-full h-32 md:h-48 flex-shrink-0"></div>
+      <div className="w-full h-48 flex-shrink-0"></div>
       <div ref={divRef} />
+      <MessageSourcePopup
+        open={isSourceOpen}
+        setOpen={setIsSourceOpen}
+        source={source}
+      />
     </div>
   )
 }

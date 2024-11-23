@@ -4,12 +4,22 @@ import React from "react"
 import useDynamicTextareaSize from "~/hooks/useDynamicTextareaSize"
 import { useMessage } from "~/hooks/useMessage"
 import { toBase64 } from "~/libs/to-base64"
-import { Checkbox, Dropdown, Image, Tooltip } from "antd"
-import { useSpeechRecognition } from "~/hooks/useSpeechRecognition"
+import { Checkbox, Dropdown, Image, Switch, Tooltip } from "antd"
 import { useWebUI } from "~/store/webui"
 import { defaultEmbeddingModelForRag } from "~/services/ollama"
-import { ImageIcon, MicIcon, X } from "lucide-react"
+import {
+  ImageIcon,
+  MicIcon,
+  StopCircleIcon,
+  X,
+  EyeIcon,
+  EyeOffIcon
+} from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { ModelSelect } from "@/components/Common/ModelSelect"
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition"
+import { PiGlobeX, PiGlobe } from "react-icons/pi"
+import { handleChatInputKeyDown } from "@/utils/key-down"
 
 type Props = {
   dropedFile: File | undefined
@@ -21,18 +31,26 @@ export const SidepanelForm = ({ dropedFile }: Props) => {
   const { sendWhenEnter, setSendWhenEnter } = useWebUI()
   const [typing, setTyping] = React.useState<boolean>(false)
   const { t } = useTranslation(["playground", "common"])
-
-  const textAreaFocus = () => {
-    if (textareaRef.current) {
-      textareaRef.current.focus()
-    }
-  }
   const form = useForm({
     initialValues: {
       message: "",
       image: ""
     }
   })
+  const {
+    transcript,
+    isListening,
+    resetTranscript,
+    start: startListening,
+    stop: stopSpeechRecognition,
+    supported: browserSupportsSpeechRecognition
+  } = useSpeechRecognition()
+
+  const stopListening = async () => {
+    if (isListening) {
+      stopSpeechRecognition()
+    }
+  }
 
   const onInputChange = async (
     e: React.ChangeEvent<HTMLInputElement> | File
@@ -47,53 +65,39 @@ export const SidepanelForm = ({ dropedFile }: Props) => {
       }
     }
   }
-
-  React.useEffect(() => {
-    if (dropedFile) {
-      onInputChange(dropedFile)
+  const textAreaFocus = () => {
+    if (textareaRef.current) {
+      textareaRef.current.focus()
     }
-  }, [dropedFile])
-
-  useDynamicTextareaSize(textareaRef, form.values.message, 120)
-
-  const { onSubmit, selectedModel, chatMode, speechToTextLanguage } =
-    useMessage()
-  const { isListening, start, stop, transcript } = useSpeechRecognition()
-
-  React.useEffect(() => {
-    if (isListening) {
-      form.setFieldValue("message", transcript)
-    }
-  }, [transcript])
-  const { mutateAsync: sendMessage, isPending: isSending } = useMutation({
-    mutationFn: onSubmit,
-    onSuccess: () => {
-      textAreaFocus()
-    },
-    onError: (error) => {
-      textAreaFocus()
-    }
-  })
-
+  }
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Process" || e.key === "229") return
     if (
-      e.key === "Enter" &&
-      !e.shiftKey &&
-      !isSending &&
-      sendWhenEnter &&
-      !typing
+      handleChatInputKeyDown({
+        e,
+        sendWhenEnter,
+        typing,
+        isSending
+      })
     ) {
       e.preventDefault()
       form.onSubmit(async (value) => {
-        if (value.message.trim().length === 0) {
+        if (value.message.trim().length === 0 && value.image.length === 0) {
           return
         }
+        await stopListening()
         if (!selectedModel || selectedModel.length === 0) {
           form.setFieldError("message", t("formError.noModel"))
           return
         }
         if (chatMode === "rag") {
+          const defaultEM = await defaultEmbeddingModelForRag()
+          if (!defaultEM) {
+            form.setFieldError("message", t("formError.noEmbeddingModel"))
+            return
+          }
+        }
+        if (webSearch) {
           const defaultEM = await defaultEmbeddingModelForRag()
           if (!defaultEM) {
             form.setFieldError("message", t("formError.noEmbeddingModel"))
@@ -110,8 +114,92 @@ export const SidepanelForm = ({ dropedFile }: Props) => {
     }
   }
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (e.clipboardData.files.length > 0) {
+      onInputChange(e.clipboardData.files[0])
+    }
+  }
+
+  const {
+    onSubmit,
+    selectedModel,
+    chatMode,
+    stopStreamingRequest,
+    streaming,
+    setChatMode,
+    webSearch,
+    setWebSearch,
+    selectedQuickPrompt,
+    setSelectedQuickPrompt,
+    speechToTextLanguage
+  } = useMessage()
+
+  React.useEffect(() => {
+    if (dropedFile) {
+      onInputChange(dropedFile)
+    }
+  }, [dropedFile])
+
+  useDynamicTextareaSize(textareaRef, form.values.message, 120)
+
+  React.useEffect(() => {
+    if (isListening) {
+      form.setFieldValue("message", transcript)
+    }
+  }, [transcript])
+
+  React.useEffect(() => {
+    if (selectedQuickPrompt) {
+      const word = getVariable(selectedQuickPrompt)
+      form.setFieldValue("message", selectedQuickPrompt)
+      if (word) {
+        textareaRef.current?.focus()
+        const interval = setTimeout(() => {
+          textareaRef.current?.setSelectionRange(word.start, word.end)
+          setSelectedQuickPrompt(null)
+        }, 100)
+        return () => {
+          clearInterval(interval)
+        }
+      }
+    }
+  }, [selectedQuickPrompt])
+  const { mutateAsync: sendMessage, isPending: isSending } = useMutation({
+    mutationFn: onSubmit,
+    onSuccess: () => {
+      textAreaFocus()
+    },
+    onError: (error) => {
+      textAreaFocus()
+    }
+  })
+
+  React.useEffect(() => {
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault()
+      if (e.dataTransfer?.items) {
+        for (let i = 0; i < e.dataTransfer.items.length; i++) {
+          if (e.dataTransfer.items[i].type === "text/plain") {
+            e.dataTransfer.items[i].getAsString((text) => {
+              form.setFieldValue("message", text)
+            })
+          }
+        }
+      }
+    }
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault()
+    }
+    textareaRef.current?.addEventListener("drop", handleDrop)
+    textareaRef.current?.addEventListener("dragover", handleDragOver)
+    return () => {
+      textareaRef.current?.removeEventListener("drop", handleDrop)
+      textareaRef.current?.removeEventListener("dragover", handleDragOver)
+    }
+  }, [])
+
   return (
-    <div className="px-3 pt-3 md:px-6 md:pt-6 md:bg-white dark:bg-[#262626] border rounded-t-xl border-black/10 dark:border-gray-600">
+    <div className="px-3 pt-3 md:px-6 md:pt-6 bg-gray-50 dark:bg-[#262626] border rounded-t-xl border-black/10 dark:border-gray-600">
       <div
         className={`h-full rounded-md shadow relative ${
           form.values.image.length === 0 ? "hidden" : "block"
@@ -148,6 +236,20 @@ export const SidepanelForm = ({ dropedFile }: Props) => {
                   return
                 }
               }
+              if (webSearch) {
+                const defaultEM = await defaultEmbeddingModelForRag()
+                if (!defaultEM) {
+                  form.setFieldError("message", t("formError.noEmbeddingModel"))
+                  return
+                }
+              }
+              await stopListening()
+              if (
+                value.message.trim().length === 0 &&
+                value.image.length === 0
+              ) {
+                return
+              }
               form.reset()
               textAreaFocus()
               await sendMessage({
@@ -171,37 +273,86 @@ export const SidepanelForm = ({ dropedFile }: Props) => {
                 onKeyDown={(e) => handleKeyDown(e)}
                 ref={textareaRef}
                 className="px-2 py-2 w-full resize-none bg-transparent focus-within:outline-none focus:ring-0 focus-visible:ring-0 ring-0 dark:ring-0 border-0 dark:text-gray-100"
-                required
+                onPaste={handlePaste}
                 rows={1}
                 style={{ minHeight: "60px" }}
                 tabIndex={0}
-                onCompositionStart={() => setTyping(true)}
-                onCompositionEnd={() => setTyping(false)}
+                onCompositionStart={() => {
+                  if (import.meta.env.BROWSER !== "firefox") {
+                    setTyping(true)
+                  }
+                }}
+                onCompositionEnd={() => {
+                  if (import.meta.env.BROWSER !== "firefox") {
+                    setTyping(false)
+                  }
+                }}
                 placeholder={t("form.textarea.placeholder")}
                 {...form.getInputProps("message")}
               />
               <div className="flex mt-4 justify-end gap-3">
-                <Tooltip title={t("tooltip.speechToText")}>
+                {chatMode !== "vision" && (
+                  <Tooltip title={t("tooltip.searchInternet")}>
+                    <button
+                      type="button"
+                      onClick={() => setWebSearch(!webSearch)}
+                      className={`inline-flex items-center gap-2   ${
+                        chatMode === "rag" ? "hidden" : "block"
+                      }`}>
+                      {webSearch ? (
+                        <PiGlobe className="h-5 w-5  dark:text-gray-300" />
+                      ) : (
+                        <PiGlobeX className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                      )}
+                    </button>
+                  </Tooltip>
+                )}
+                <ModelSelect />
+                {browserSupportsSpeechRecognition && (
+                  <Tooltip title={t("tooltip.speechToText")}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (isListening) {
+                          stopListening()
+                        } else {
+                          resetTranscript()
+                          startListening({
+                            continuous: true,
+                            lang: speechToTextLanguage
+                          })
+                        }
+                      }}
+                      className={`flex items-center justify-center dark:text-gray-300`}>
+                      {!isListening ? (
+                        <MicIcon className="h-5 w-5" />
+                      ) : (
+                        <div className="relative">
+                          <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+                          <MicIcon className="h-5 w-5" />
+                        </div>
+                      )}
+                    </button>
+                  </Tooltip>
+                )}
+                <Tooltip title={t("tooltip.vision")}>
                   <button
                     type="button"
                     onClick={() => {
-                      if (isListening) {
-                        stop()
+                      if (chatMode === "vision") {
+                        setChatMode("normal")
                       } else {
-                        start({
-                          lang: speechToTextLanguage,
-                          continuous: true
-                        })
+                        setChatMode("vision")
                       }
                     }}
-                    className={`flex items-center justify-center dark:text-gray-300`}>
-                    {!isListening ? (
-                      <MicIcon className="h-5 w-5" />
+                    disabled={chatMode === "rag"}
+                    className={`flex items-center justify-center dark:text-gray-300 ${
+                      chatMode === "rag" ? "hidden" : "block"
+                    } disabled:opacity-50`}>
+                    {chatMode === "vision" ? (
+                      <EyeIcon className="h-5 w-5" />
                     ) : (
-                      <div className="relative">
-                        <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
-                        <MicIcon className="h-5 w-5" />
-                      </div>
+                      <EyeOffIcon className="h-5 w-5" />
                     )}
                   </button>
                 </Tooltip>
@@ -211,65 +362,89 @@ export const SidepanelForm = ({ dropedFile }: Props) => {
                     onClick={() => {
                       inputRef.current?.click()
                     }}
-                    className={`flex items-center justify-center dark:text-gray-300 ${
+                    disabled={chatMode === "vision"}
+                    className={`flex items-center justify-center disabled:opacity-50 dark:text-gray-300 ${
                       chatMode === "rag" ? "hidden" : "block"
                     }`}>
                     <ImageIcon className="h-5 w-5" />
                   </button>
                 </Tooltip>
-                <Dropdown.Button
-                  htmlType="submit"
-                  disabled={isSending}
-                  className="!justify-end !w-auto"
-                  icon={
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                      />
-                    </svg>
-                  }
-                  menu={{
-                    items: [
-                      {
-                        key: 1,
-                        label: (
-                          <Checkbox
-                            checked={sendWhenEnter}
-                            onChange={(e) =>
-                              setSendWhenEnter(e.target.checked)
-                            }>
-                            {t("sendWhenEnter")}
-                          </Checkbox>
-                        )
-                      }
-                    ]
-                  }}>
-                  <div className="inline-flex gap-2">
-                    {sendWhenEnter ? (
+                {!streaming ? (
+                  <Dropdown.Button
+                    htmlType="submit"
+                    disabled={isSending}
+                    className="!justify-end !w-auto"
+                    icon={
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
                         stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        className="h-5 w-5"
-                        viewBox="0 0 24 24">
-                        <path d="M9 10L4 15 9 20"></path>
-                        <path d="M20 4v7a4 4 0 01-4 4H4"></path>
+                        className="w-5 h-5">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                        />
                       </svg>
-                    ) : null}
-                    {t("common:submit")}
-                  </div>
-                </Dropdown.Button>
+                    }
+                    menu={{
+                      items: [
+                        {
+                          key: 1,
+                          label: (
+                            <Checkbox
+                              checked={sendWhenEnter}
+                              onChange={(e) =>
+                                setSendWhenEnter(e.target.checked)
+                              }>
+                              {t("sendWhenEnter")}
+                            </Checkbox>
+                          )
+                        },
+                        {
+                          key: 2,
+                          label: (
+                            <Checkbox
+                              checked={chatMode === "rag"}
+                              onChange={(e) => {
+                                setChatMode(e.target.checked ? "rag" : "normal")
+                              }}>
+                              {t("common:chatWithCurrentPage")}
+                            </Checkbox>
+                          )
+                        }
+                      ]
+                    }}>
+                    <div className="inline-flex gap-2">
+                      {sendWhenEnter ? (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          className="h-5 w-5"
+                          viewBox="0 0 24 24">
+                          <path d="M9 10L4 15 9 20"></path>
+                          <path d="M20 4v7a4 4 0 01-4 4H4"></path>
+                        </svg>
+                      ) : null}
+                      {t("common:submit")}
+                    </div>
+                  </Dropdown.Button>
+                ) : (
+                  <Tooltip title={t("tooltip.stopStreaming")}>
+                    <button
+                      type="button"
+                      onClick={stopStreamingRequest}
+                      className="text-gray-800 dark:text-gray-300">
+                      <StopCircleIcon className="h-6 w-6" />
+                    </button>
+                  </Tooltip>
+                )}
               </div>
             </div>
           </form>

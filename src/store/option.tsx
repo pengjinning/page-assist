@@ -1,3 +1,4 @@
+import { Knowledge } from "@/db/knowledge"
 import { create } from "zustand"
 
 type WebSearch = {
@@ -16,12 +17,15 @@ export type Message = {
   sources: any[]
   images?: string[]
   search?: WebSearch
+  id?: string
+  messageType?: string
 }
 
 export type ChatHistory = {
   role: "user" | "assistant" | "system"
   content: string
-  image?: string
+  image?: string,
+  messageType?: string
 }[]
 
 type State = {
@@ -45,18 +49,25 @@ type State = {
   setChatMode: (chatMode: "normal" | "rag") => void
   isEmbedding: boolean
   setIsEmbedding: (isEmbedding: boolean) => void
-  speechToTextLanguage: string
-  setSpeechToTextLanguage: (language: string) => void
-  webSearch: boolean;
-  setWebSearch: (webSearch: boolean) => void;
-  isSearchingInternet: boolean;
-  setIsSearchingInternet: (isSearchingInternet: boolean) => void;
+  webSearch: boolean
+  setWebSearch: (webSearch: boolean) => void
+  isSearchingInternet: boolean
+  setIsSearchingInternet: (isSearchingInternet: boolean) => void
 
   selectedSystemPrompt: string | null
   setSelectedSystemPrompt: (selectedSystemPrompt: string) => void
 
   selectedQuickPrompt: string | null
   setSelectedQuickPrompt: (selectedQuickPrompt: string) => void
+
+  selectedKnowledge: Knowledge | null
+  setSelectedKnowledge: (selectedKnowledge: Knowledge) => void
+
+  setSpeechToTextLanguage: (language: string) => void
+  speechToTextLanguage: string
+
+  temporaryChat: boolean
+  setTemporaryChat: (temporaryChat: boolean) => void
 }
 
 export const useStoreMessageOption = create<State>((set) => ({
@@ -88,7 +99,14 @@ export const useStoreMessageOption = create<State>((set) => ({
   isSearchingInternet: false,
   setIsSearchingInternet: (isSearchingInternet) => set({ isSearchingInternet }),
   selectedSystemPrompt: null,
-  setSelectedSystemPrompt: (selectedSystemPrompt) => set({ selectedSystemPrompt }),
+  setSelectedSystemPrompt: (selectedSystemPrompt) =>
+    set({ selectedSystemPrompt }),
   selectedQuickPrompt: null,
   setSelectedQuickPrompt: (selectedQuickPrompt) => set({ selectedQuickPrompt }),
+
+  selectedKnowledge: null,
+  setSelectedKnowledge: (selectedKnowledge) => set({ selectedKnowledge }),
+
+  temporaryChat: false,
+  setTemporaryChat: (temporaryChat) => set({ temporaryChat }),
 }))

@@ -12,6 +12,7 @@ export type ChatHistory = {
   role: "user" | "assistant" | "system"
   content: string
   image?: string
+  messageType?: string
 }[]
 
 type State = {
@@ -31,14 +32,19 @@ type State = {
   setIsProcessing: (isProcessing: boolean) => void
   selectedModel: string | null
   setSelectedModel: (selectedModel: string) => void
-  chatMode: "normal" | "rag"
-  setChatMode: (chatMode: "normal" | "rag") => void
+  chatMode: "normal" | "rag" | "vision"
+  setChatMode: (chatMode: "normal" | "rag" | "vision") => void
   isEmbedding: boolean
   setIsEmbedding: (isEmbedding: boolean) => void
   speechToTextLanguage: string
   setSpeechToTextLanguage: (speechToTextLanguage: string) => void
   currentURL: string
   setCurrentURL: (currentURL: string) => void
+  selectedSystemPrompt: string | null
+  setSelectedSystemPrompt: (selectedSystemPrompt: string) => void
+
+  selectedQuickPrompt: string | null
+  setSelectedQuickPrompt: (selectedQuickPrompt: string) => void
 }
 
 export const useStoreMessage = create<State>((set) => ({
@@ -67,5 +73,11 @@ export const useStoreMessage = create<State>((set) => ({
   setSpeechToTextLanguage: (speechToTextLanguage) =>
     set({ speechToTextLanguage }),
   currentURL: "",
-  setCurrentURL: (currentURL) => set({ currentURL })
+  setCurrentURL: (currentURL) => set({ currentURL }),
+
+  selectedSystemPrompt: null,
+  setSelectedSystemPrompt: (selectedSystemPrompt) =>
+    set({ selectedSystemPrompt }),
+  selectedQuickPrompt: null,
+  setSelectedQuickPrompt: (selectedQuickPrompt) => set({ selectedQuickPrompt })
 }))

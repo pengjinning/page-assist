@@ -22,8 +22,8 @@ Click the button below to deploy the code to Railway.
 1. Clone the repository
 
 ```bash
-git clone https://github.com/n4ze3m/page-assist-app.git
-cd page-assist-app
+git clone https://github.com/n4ze3m/page-share-app.git
+cd page-share-app
 ```
 
 2. Run the server

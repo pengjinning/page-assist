@@ -1,9 +1,9 @@
 import { BaseDocumentLoader } from "langchain/document_loaders/base"
-// import { Document } from "@langchain/core/documents"
-import { Document } from "langchain/document"
-import { compile } from "html-to-text"
-import { chromeRunTime } from "~/libs/runtime"
+import { Document } from "@langchain/core/documents"
+import { urlRewriteRuntime } from "~/libs/runtime"
 import { YtTranscript } from "yt-transcript"
+import { isWikipedia, parseWikipedia } from "@/parser/wiki"
+import { extractReadabilityContent } from "@/parser/reader"
 
 const YT_REGEX =
   /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?([a-zA-Z0-9_-]+)/
@@ -16,7 +16,6 @@ const getTranscript = async (url: string) => {
   const ytTranscript = new YtTranscript({ url })
   return await ytTranscript.getTranscript()
 }
-
 
 export interface WebLoaderParams {
   html: string
@@ -48,23 +47,19 @@ export class PageAssistHtmlLoader
         text += item.text + " "
       })
 
-
       return [
         {
           metadata: {
             source: this.url,
+            url: this.url,
             audio: { chunks: transcript }
           },
           pageContent: text
         }
       ]
     }
-    const htmlCompiler = compile({
-      wordwrap: false
-    })
-    const text = htmlCompiler(this.html)
-    const metadata = { source: this.url }
-    return [new Document({ pageContent: text, metadata })]
+    const metadata = { source: this.url, url: this.url, }
+    return [new Document({ pageContent: this.html, metadata })]
   }
 
   async loadByURL(): Promise<Document<Record<string, any>>[]> {
@@ -80,10 +75,10 @@ export class PageAssistHtmlLoader
         text += item.text + " "
       })
 
-
       return [
         {
           metadata: {
+            url: this.url,
             source: this.url,
             audio: { chunks: transcript }
           },
@@ -91,17 +86,16 @@ export class PageAssistHtmlLoader
         }
       ]
     }
-    await chromeRunTime(this.url)
-    const fetchHTML = await fetch(this.url)
-    const html = await fetchHTML.text()
-    const htmlCompiler = compile({
-      wordwrap: false,
-      selectors: [
-        { selector: "img", format: "skip" },
-        { selector: "script", format: "skip" }
-      ]
-    })
-    const text = htmlCompiler(html)
+    await urlRewriteRuntime(this.url, "web")
+    let text = "";
+    if (isWikipedia(this.url)) {
+      console.log("Wikipedia URL detected")
+      const fetchHTML = await fetch(this.url)
+      text = parseWikipedia(await fetchHTML.text())
+    } else {
+      text = await extractReadabilityContent(this.url)
+    }
+
     const metadata = { url: this.url }
     return [new Document({ pageContent: text, metadata })]
   }

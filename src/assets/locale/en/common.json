@@ -41,6 +41,7 @@
     "webSearch": "Searching the web",
     "regenerate": "Regenerate",
     "edit": "Edit",
+    "delete": "Delete",
     "saveAndSubmit": "Save & Submit",
     "editMessage": {
         "placeholder": "Type a message..."
@@ -48,5 +49,77 @@
     "submit": "Submit",
     "noData": "No data",
     "noHistory": "No chat history",
-    "chatWithCurrentPage": "Chat with current page"
+    "chatWithCurrentPage": "Chat with current page",
+    "beta": "Beta",
+    "tts": "Read aloud",
+    "currentChatModelSettings": "Current Chat Model Settings",
+    "modelSettings": {
+        "label": "Model Settings",
+        "description": "Set the model options globally for all chats",
+        "form": {
+            "keepAlive": {
+                "label": "Keep Alive",
+                "help": "controls how long the model will stay loaded into memory following the request (default: 5m)",
+                "placeholder": "Enter Keep Alive duration (e.g. 5m, 10m, 1h)"
+            },
+            "temperature": {
+                "label": "Temperature",
+                "placeholder": "Enter Temperature value (e.g. 0.7, 1.0)"
+            },
+            "numCtx": {
+                "label": "Number of Contexts",
+                "placeholder": "Enter Number of Contexts value (default: 2048)"
+            },
+            "numPredict": {
+                "label": "Max Tokens (num_predict)",
+                "placeholder": "Enter Max Tokens value (e.g. 2048, 4096)"
+            },
+            "seed": {
+                "label": "Seed",
+                "placeholder": "Enter Seed value (e.g. 1234)",
+                "help": "Reproducibility of the model output"
+            },
+            "topK": {
+                "label": "Top K",
+                "placeholder": "Enter Top K value (e.g. 40, 100)"
+            },
+            "topP": {
+                "label": "Top P",
+                "placeholder": "Enter Top P value (e.g. 0.9, 0.95)"
+            },
+            "numGpu": {
+                "label": "Num GPU",
+                "placeholder": "Enter number of layers to send to GPU(s)"
+            },
+            "systemPrompt": {
+                "label": "Temporary System Prompt",
+                "placeholder": "Enter System Prompt",
+                "help": "This is a quick way to set the system prompt in the current chat, which will override the selected system prompt if it exists."
+            }
+        },
+        "advanced": "More Model Settings"
+    },
+    "copilot": {
+        "summary": "Summarize",
+        "explain": "Explain",
+        "rephrase": "Rephrase",
+        "translate": "Translate",
+        "custom": "Custom"
+    },
+    "citations": "Citations",
+    "segmented": {
+        "ollama": "Ollama Models",
+        "custom": "Custom Models"
+    },
+    "downloadCode": "Download Code",
+    "date": {
+        "pinned": "Pinned",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last7Days": "Last 7 Days",
+        "older": "Older"
+    },
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "generationInfo": "Generation Info"
 }

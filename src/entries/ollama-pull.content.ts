@@ -9,7 +9,7 @@ export default defineContentScript({
           `[Page Assist Extension] Pulling ${modelName} model. For more details, check the extension icon.`
         )
 
-        await chrome.runtime.sendMessage({
+        await browser.runtime.sendMessage({
           type: "pull_model",
           modelName
         })
@@ -52,5 +52,6 @@ export default defineContentScript({
     }
   },
   allFrames: true,
-  matches: ["*://ollama.com/library/*"]
+  matches: ["*://ollama.com/*"],
+
 })

@@ -6,12 +6,15 @@ import { toBase64 } from "~/libs/to-base64"
 import { useMessageOption } from "~/hooks/useMessageOption"
 import { Checkbox, Dropdown, Switch, Tooltip } from "antd"
 import { Image } from "antd"
-import { useSpeechRecognition } from "~/hooks/useSpeechRecognition"
 import { useWebUI } from "~/store/webui"
 import { defaultEmbeddingModelForRag } from "~/services/ollama"
 import { ImageIcon, MicIcon, StopCircleIcon, X } from "lucide-react"
 import { getVariable } from "~/utils/select-varaible"
 import { useTranslation } from "react-i18next"
+import { KnowledgeSelect } from "../Knowledge/KnowledgeSelect"
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition"
+import { PiGlobe } from "react-icons/pi"
+import { handleChatInputKeyDown } from "@/utils/key-down"
 
 type Props = {
   dropedFile: File | undefined
@@ -32,18 +35,31 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
     setWebSearch,
     selectedQuickPrompt,
     textareaRef,
-    setSelectedQuickPrompt
+    setSelectedQuickPrompt,
+    selectedKnowledge,
+    temporaryChat
   } = useMessageOption()
+
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+  }
 
   const textAreaFocus = () => {
     if (textareaRef.current) {
       if (
         textareaRef.current.selectionStart === textareaRef.current.selectionEnd
       ) {
-        textareaRef.current.focus()
+        if (!isMobile()) {
+          textareaRef.current.focus()
+        } else {
+          textareaRef.current.blur()
+        }
       }
     }
   }
+
   const form = useForm({
     initialValues: {
       message: "",
@@ -68,7 +84,11 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
       }
     }
   }
-
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (e.clipboardData.files.length > 0) {
+      onInputChange(e.clipboardData.files[0])
+    }
+  }
   React.useEffect(() => {
     if (dropedFile) {
       onInputChange(dropedFile)
@@ -77,7 +97,14 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
 
   useDynamicTextareaSize(textareaRef, form.values.message, 300)
 
-  const { isListening, start, stop, transcript } = useSpeechRecognition()
+  const {
+    transcript,
+    isListening,
+    resetTranscript,
+    start: startListening,
+    stop: stopSpeechRecognition,
+    supported: browserSupportsSpeechRecognition
+  } = useSpeechRecognition()
   const { sendWhenEnter, setSendWhenEnter } = useWebUI()
 
   React.useEffect(() => {
@@ -119,17 +146,21 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
   })
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Process" || e.key === "229") return
+    if (import.meta.env.BROWSER !== "firefox") {
+      if (e.key === "Process" || e.key === "229") return
+    }
     if (
-      !typing &&
-      e.key === "Enter" &&
-      !e.shiftKey &&
-      !isSending &&
-      sendWhenEnter
+      handleChatInputKeyDown({
+        e,
+        sendWhenEnter,
+        typing,
+        isSending
+      })
     ) {
       e.preventDefault()
+      stopListening()
       form.onSubmit(async (value) => {
-        if (value.message.trim().length === 0) {
+        if (value.message.trim().length === 0 && value.image.length === 0) {
           return
         }
         if (!selectedModel || selectedModel.length === 0) {
@@ -152,8 +183,18 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
       })()
     }
   }
+
+  const stopListening = async () => {
+    if (isListening) {
+      stopSpeechRecognition()
+    }
+  }
+
   return (
-    <div className="px-3 pt-3 md:px-6 md:pt-6 md:bg-white dark:bg-[#262626] border rounded-t-xl  dark:border-gray-600">
+    <div
+      className={`px-3 pt-3 md:px-4 md:pt-4 bg-gray-100 dark:bg-[#262626] border rounded-t-xl  dark:border-gray-600
+    ${temporaryChat && "!bg-gray-300 dark:!bg-black "}
+    `}>
       <div
         className={`h-full rounded-md shadow relative ${
           form.values.image.length === 0 ? "hidden" : "block"
@@ -176,9 +217,12 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
         </div>
       </div>
       <div>
-        <div className="flex">
+        <div className={`flex rounded-t-xl bg-white dark:bg-transparent ${
+          temporaryChat && "!bg-gray-300 dark:!bg-black"
+        }`}>
           <form
             onSubmit={form.onSubmit(async (value) => {
+              stopListening()
               if (!selectedModel || selectedModel.length === 0) {
                 form.setFieldError("message", t("formError.noModel"))
                 return
@@ -189,6 +233,12 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
                   form.setFieldError("message", t("formError.noEmbeddingModel"))
                   return
                 }
+              }
+              if (
+                value.message.trim().length === 0 &&
+                value.image.length === 0
+              ) {
+                return
               }
               form.reset()
               textAreaFocus()
@@ -210,81 +260,87 @@ export const PlaygroundForm = ({ dropedFile }: Props) => {
             />
             <div className="w-full border-x border-t flex flex-col dark:border-gray-600 rounded-t-xl p-2">
               <textarea
-                onCompositionStart={() => setTyping(true)}
-                onCompositionEnd={() => setTyping(false)}
+                onCompositionStart={() => {
+                  if (import.meta.env.BROWSER !== "firefox") {
+                    setTyping(true)
+                  }
+                }}
+                onCompositionEnd={() => {
+                  if (import.meta.env.BROWSER !== "firefox") {
+                    setTyping(false)
+                  }
+                }}
                 onKeyDown={(e) => handleKeyDown(e)}
                 ref={textareaRef}
                 className="px-2 py-2 w-full resize-none bg-transparent focus-within:outline-none focus:ring-0 focus-visible:ring-0 ring-0 dark:ring-0 border-0 dark:text-gray-100"
-                required
+                onPaste={handlePaste}
                 rows={1}
-                style={{ minHeight: "60px" }}
+                style={{ minHeight: "40px" }}
                 tabIndex={0}
                 placeholder={t("form.textarea.placeholder")}
                 {...form.getInputProps("message")}
               />
               <div className="mt-4 flex justify-between items-center">
                 <div className="flex">
-                  <Tooltip title={t("tooltip.searchInternet")}>
-                    <div className="inline-flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-5 h-5 dark:text-gray-300">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
+                  {!selectedKnowledge && (
+                    <Tooltip title={t("tooltip.searchInternet")}>
+                      <div className="inline-flex items-center gap-2">
+                        <PiGlobe className="h-5 w-5 dark:text-gray-300" />
+                        <Switch
+                          value={webSearch}
+                          onChange={(e) => setWebSearch(e)}
+                          checkedChildren={t("form.webSearch.on")}
+                          unCheckedChildren={t("form.webSearch.off")}
                         />
-                      </svg>
-                      <Switch
-                        value={webSearch}
-                        onChange={(e) => setWebSearch(e)}
-                        checkedChildren={t("form.webSearch.on")}
-                        unCheckedChildren={t("form.webSearch.off")}
-                      />
-                    </div>
-                  </Tooltip>
+                      </div>
+                    </Tooltip>
+                  )}
                 </div>
                 <div className="flex !justify-end gap-3">
-                  <Tooltip title={t("tooltip.speechToText")}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isListening) {
-                          stop()
-                        } else {
-                          start({
-                            lang: speechToTextLanguage,
-                            continuous: true
-                          })
-                        }
-                      }}
-                      className={`flex items-center justify-center dark:text-gray-300`}>
-                      {!isListening ? (
-                        <MicIcon className="h-5 w-5" />
-                      ) : (
-                        <div className="relative">
-                          <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+                  {!selectedKnowledge && (
+                    <Tooltip title={t("tooltip.uploadImage")}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          inputRef.current?.click()
+                        }}
+                        className={`flex items-center justify-center dark:text-gray-300 ${
+                          chatMode === "rag" ? "hidden" : "block"
+                        }`}>
+                        <ImageIcon className="h-5 w-5" />
+                      </button>
+                    </Tooltip>
+                  )}
+
+                  {browserSupportsSpeechRecognition && (
+                    <Tooltip title={t("tooltip.speechToText")}>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (isListening) {
+                            stopSpeechRecognition()
+                          } else {
+                            resetTranscript()
+                            startListening({
+                              continuous: true,
+                              lang: speechToTextLanguage
+                            })
+                          }
+                        }}
+                        className={`flex items-center justify-center dark:text-gray-300`}>
+                        {!isListening ? (
                           <MicIcon className="h-5 w-5" />
-                        </div>
-                      )}
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={t("tooltip.uploadImage")}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        inputRef.current?.click()
-                      }}
-                      className={`flex items-center justify-center dark:text-gray-300 ${
-                        chatMode === "rag" ? "hidden" : "block"
-                      }`}>
-                      <ImageIcon className="h-5 w-5" />
-                    </button>
-                  </Tooltip> 
+                        ) : (
+                          <div className="relative">
+                            <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+                            <MicIcon className="h-5 w-5" />
+                          </div>
+                        )}
+                      </button>
+                    </Tooltip>
+                  )}
+                  <KnowledgeSelect />
+
                   {!isSending ? (
                     <Dropdown.Button
                       htmlType="submit"

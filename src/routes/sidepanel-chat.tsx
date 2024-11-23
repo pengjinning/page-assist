@@ -1,16 +1,53 @@
+import {
+  formatToChatHistory,
+  formatToMessage,
+  getRecentChatFromCopilot
+} from "@/db"
+import useBackgroundMessage from "@/hooks/useBackgroundMessage"
+import { copilotResumeLastChat } from "@/services/app"
+import { notification } from "antd"
 import React from "react"
+import { useTranslation } from "react-i18next"
 import { SidePanelBody } from "~/components/Sidepanel/Chat/body"
 import { SidepanelForm } from "~/components/Sidepanel/Chat/form"
 import { SidepanelHeader } from "~/components/Sidepanel/Chat/header"
 import { useMessage } from "~/hooks/useMessage"
 
-export const SidepanelChat = () => {
+const SidepanelChat = () => {
   const drop = React.useRef<HTMLDivElement>(null)
   const [dropedFile, setDropedFile] = React.useState<File | undefined>()
+  const { t } = useTranslation(["playground"])
   const [dropState, setDropState] = React.useState<
     "idle" | "dragging" | "error"
   >("idle")
-  const {chatMode} = useMessage()
+  const {
+    chatMode,
+    streaming,
+    onSubmit,
+    messages,
+    setHistory,
+    setHistoryId,
+    setMessages,
+    selectedModel
+  } = useMessage()
+
+  const bgMsg = useBackgroundMessage()
+
+  const setRecentMessagesOnLoad = async () => {
+    const isEnabled = await copilotResumeLastChat()
+    if (!isEnabled) {
+      return
+    }
+    if (messages.length === 0) {
+      const recentChat = await getRecentChatFromCopilot()
+      if (recentChat) {
+        setHistoryId(recentChat.history.id)
+        setHistory(formatToChatHistory(recentChat.messages))
+        setMessages(formatToMessage(recentChat.messages))
+      }
+    }
+  }
+
   React.useEffect(() => {
     if (!drop.current) {
       return
@@ -67,6 +104,27 @@ export const SidepanelChat = () => {
       }
     }
   }, [])
+
+  React.useEffect(() => {
+    setRecentMessagesOnLoad()
+  }, [])
+
+  React.useEffect(() => {
+    if (bgMsg && !streaming) {
+      if (selectedModel) {
+        onSubmit({
+          message: bgMsg.text,
+          messageType: bgMsg.type,
+          image: ""
+        })
+      } else {
+        notification.error({
+          message: t("formError.noModel")
+        })
+      }
+    }
+  }, [bgMsg])
+
   return (
     <div
       ref={drop}
@@ -90,3 +148,5 @@ export const SidepanelChat = () => {
     </div>
   )
 }
+
+export default SidepanelChat

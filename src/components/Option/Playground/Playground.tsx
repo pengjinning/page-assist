@@ -1,15 +1,21 @@
 import React from "react"
 import { PlaygroundForm } from "./PlaygroundForm"
 import { PlaygroundChat } from "./PlaygroundChat"
+import { useMessageOption } from "@/hooks/useMessageOption"
 
 export const Playground = () => {
   const drop = React.useRef<HTMLDivElement>(null)
   const [dropedFile, setDropedFile] = React.useState<File | undefined>()
+  const { selectedKnowledge } = useMessageOption()
 
   const [dropState, setDropState] = React.useState<
     "idle" | "dragging" | "error"
   >("idle")
   React.useEffect(() => {
+    if (selectedKnowledge) {
+      return
+    }
+
     if (!drop.current) {
       return
     }
@@ -64,7 +70,7 @@ export const Playground = () => {
         drop.current.removeEventListener("dragleave", handleDragLeave)
       }
     }
-  }, [])
+  }, [selectedKnowledge])
   return (
     <div
       ref={drop}
@@ -72,6 +78,7 @@ export const Playground = () => {
         dropState === "dragging" ? "bg-gray-100 dark:bg-gray-800 z-10" : ""
       } bg-white dark:bg-[#171717]`}>
       <PlaygroundChat />
+      
       <div className="flex flex-col items-center">
         <div className="flex-grow">
           <div className="w-full flex justify-center">

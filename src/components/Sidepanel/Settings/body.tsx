@@ -11,17 +11,31 @@ import {
   defaultEmbeddingChunkOverlap,
   defaultEmbeddingChunkSize,
   defaultEmbeddingModelForRag,
-  saveForRag
+  saveForRag,
+  getEmbeddingModels
 } from "~/services/ollama"
 
-import { Skeleton, Radio, Select, Form, InputNumber } from "antd"
+import {
+  Skeleton,
+  Radio,
+  Select,
+  Form,
+  InputNumber,
+  Collapse,
+  Switch
+} from "antd"
 import { useDarkMode } from "~/hooks/useDarkmode"
 import { SaveButton } from "~/components/Common/SaveButton"
 import { SUPPORTED_LANGUAGES } from "~/utils/supporetd-languages"
 import { useMessage } from "~/hooks/useMessage"
 import { MoonIcon, SunIcon } from "lucide-react"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import { useI18n } from "@/hooks/useI18n"
+import { TTSModeSettings } from "@/components/Option/Settings/tts-mode"
+import { AdvanceOllamaSettings } from "@/components/Common/Settings/AdvanceOllamaSettings"
+import { useStorage } from "@plasmohq/storage/hook"
+import { getTotalFilePerKB } from "@/services/app"
+import { SidepanelRag } from "@/components/Option/Settings/sidepanel-rag"
 
 export const SettingsBody = () => {
   const { t } = useTranslation("settings")
@@ -32,8 +46,18 @@ export const SettingsBody = () => {
   const [selectedValue, setSelectedValue] = React.useState<"normal" | "rag">(
     "normal"
   )
+  const [copilotResumeLastChat, setCopilotResumeLastChat] = useStorage(
+    "copilotResumeLastChat",
+    false
+  )
 
-  const { speechToTextLanguage, setSpeechToTextLanguage } = useMessage()
+  const [hideCurrentChatModelSettings, setHideCurrentChatModelSettings] =
+    useStorage("hideCurrentChatModelSettings", false)
+
+  const [ speechToTextLanguage, setSpeechToTextLanguage ] = useStorage(
+    "speechToTextLanguage",
+    "en-US"
+  )
   const { mode, toggleDarkMode } = useDarkMode()
 
   const { changeLocale, locale, supportLanguage } = useI18n()
@@ -48,15 +72,17 @@ export const SettingsBody = () => {
         allModels,
         chunkOverlap,
         chunkSize,
-        defaultEM
+        defaultEM,
+        totalFilePerKB
       ] = await Promise.all([
         getOllamaURL(),
         systemPromptForNonRag(),
         promptForRag(),
-        getAllModels({ returnEmpty: true }),
+        getEmbeddingModels({ returnEmpty: true }),
         defaultEmbeddingChunkOverlap(),
         defaultEmbeddingChunkSize(),
-        defaultEmbeddingModelForRag()
+        defaultEmbeddingModelForRag(),
+        getTotalFilePerKB()
       ])
 
       return {
@@ -67,18 +93,19 @@ export const SettingsBody = () => {
         models: allModels,
         chunkOverlap,
         chunkSize,
-        defaultEM
+        defaultEM,
+        totalFilePerKB
       }
     }
   })
 
   const { mutate: saveRAG, isPending: isSaveRAGPending } = useMutation({
-    mutationFn: async (data: {
+    mutationFn: async (f: {
       model: string
       chunkSize: number
       overlap: number
     }) => {
-      await saveForRag(data.model, data.chunkSize, data.overlap)
+      await saveForRag(f.model, f.chunkSize, f.overlap, data.totalFilePerKB)
     }
   })
 
@@ -178,9 +205,11 @@ export const SettingsBody = () => {
           </div>
         )}
       </div>
-
       <div className="border border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
-        <h2 className="text-md mb-4 font-semibold dark:text-white">
+        <SidepanelRag hideBorder />
+      </div>
+      <div className="border flex flex-col gap-4 border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
+        <h2 className="text-md font-semibold dark:text-white">
           {t("ollamaSettings.heading")}
         </h2>
         <input
@@ -190,6 +219,37 @@ export const SettingsBody = () => {
           onChange={(e) => setOllamaURL(e.target.value)}
           placeholder={t("ollamaSettings.settings.ollamaUrl.placeholder")}
         />
+
+        <Collapse
+          size="small"
+          items={[
+            {
+              key: "1",
+              label: (
+                <div>
+                  <h2 className="text-base font-semibold leading-7 text-gray-900 dark:text-white">
+                    {t("ollamaSettings.settings.advanced.label")}
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    <Trans
+                      i18nKey="settings:ollamaSettings.settings.advanced.help"
+                      components={{
+                        anchor: (
+                          <a
+                            href="https://github.com/n4ze3m/page-assist/blob/main/docs/connection-issue.md#solutions"
+                            target="__blank"
+                            className="text-blue-600 dark:text-blue-400"></a>
+                        )
+                      }}
+                    />
+                  </p>
+                </div>
+              ),
+              children: <AdvanceOllamaSettings />
+            }
+          ]}
+        />
+
         <div className="flex justify-end">
           <SaveButton
             onClick={() => {
@@ -198,10 +258,9 @@ export const SettingsBody = () => {
           />
         </div>
       </div>
-
       <div className="border border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
         <h2 className="text-md mb-4 font-semibold dark:text-white">
-          {t("ollamaSettings.settings.ragSettings.label")}
+          {t("rag.ragSettings.label")}
         </h2>
         <Form
           onFinish={(data) => {
@@ -218,12 +277,12 @@ export const SettingsBody = () => {
           }}>
           <Form.Item
             name="defaultEM"
-            label={t("ollamaSettings.settings.ragSettings.model.label")}
-            help={t("ollamaSettings.settings.ragSettings.model.help")}
+            label={t("rag.ragSettings.model.label")}
+            help={t("rag.ragSettings.model.help")}
             rules={[
               {
                 required: true,
-                message: t("ollamaSettings.settings.ragSettings.model.required")
+                message: t("rag.ragSettings.model.required")
               }
             ]}>
             <Select
@@ -245,38 +304,30 @@ export const SettingsBody = () => {
 
           <Form.Item
             name="chunkSize"
-            label={t("ollamaSettings.settings.ragSettings.chunkSize.label")}
+            label={t("rag.ragSettings.chunkSize.label")}
             rules={[
               {
                 required: true,
-                message: t(
-                  "ollamaSettings.settings.ragSettings.chunkSize.required"
-                )
+                message: t("rag.ragSettings.chunkSize.required")
               }
             ]}>
             <InputNumber
               style={{ width: "100%" }}
-              placeholder={t(
-                "ollamaSettings.settings.ragSettings.chunkSize.placeholder"
-              )}
+              placeholder={t("rag.ragSettings.chunkSize.placeholder")}
             />
           </Form.Item>
           <Form.Item
             name="chunkOverlap"
-            label={t("ollamaSettings.settings.ragSettings.chunkOverlap.label")}
+            label={t("rag.ragSettings.chunkOverlap.label")}
             rules={[
               {
                 required: true,
-                message: t(
-                  "ollamaSettings.settings.ragSettings.chunkOverlap.required"
-                )
+                message: t("rag.ragSettings.chunkOverlap.required")
               }
             ]}>
             <InputNumber
               style={{ width: "100%" }}
-              placeholder={t(
-                "ollamaSettings.settings.ragSettings.chunkOverlap.placeholder"
-              )}
+              placeholder={t("rag.ragSettings.chunkOverlap.placeholder")}
             />
           </Form.Item>
 
@@ -285,50 +336,86 @@ export const SettingsBody = () => {
           </div>
         </Form>
       </div>
-      <div className="border border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
-        <h2 className="text-md mb-4 font-semibold dark:text-white">
-          {t("generalSettings.settings.language.label")}{" "}
+
+      <div className="border space-y-3 w-full border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
+        <h2 className="text-base mb-4 font-semibold leading-7 text-gray-900 dark:text-white">
+          {t("generalSettings.title")}
         </h2>
-        <Select
-          placeholder={t("generalSettings.settings.language.placeholder")}
-          showSearch
-          options={supportLanguage}
-          value={locale}
-          filterOption={(input, option) =>
-            option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0 ||
-            option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }
-          onChange={(value) => {
-            changeLocale(value)
-          }}
-          style={{
-            width: "100%"
-          }}
-        />
+        <div className="flex flex-col  space-y-4">
+          <span className="text-gray-500   dark:text-neutral-50">
+            {t("generalSettings.settings.copilotResumeLastChat.label")}
+          </span>
+
+          <div>
+            <Switch
+              checked={copilotResumeLastChat}
+              onChange={(checked) => setCopilotResumeLastChat(checked)}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col space-y-4">
+          <div className="inline-flex items-center gap-2">
+            <span className="text-gray-500   dark:text-neutral-50">
+              {t("generalSettings.settings.hideCurrentChatModelSettings.label")}
+            </span>
+          </div>
+          <div>
+            <Switch
+              checked={hideCurrentChatModelSettings}
+              onChange={(checked) => setHideCurrentChatModelSettings(checked)}
+            />
+          </div>
+        </div>
+        <div>
+          <div className="text-xs mb-2  dark:text-white">
+            {t("generalSettings.settings.speechRecognitionLang.label")}{" "}
+          </div>
+          <Select
+            placeholder={t(
+              "generalSettings.settings.speechRecognitionLang.placeholder"
+            )}
+            allowClear
+            showSearch
+            options={SUPPORTED_LANGUAGES}
+            value={speechToTextLanguage}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0 ||
+              option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+            onChange={(value) => {
+              setSpeechToTextLanguage(value)
+            }}
+            style={{
+              width: "100%"
+            }}
+          />
+        </div>
+        <div>
+          <div className="text-xs mb-2  dark:text-white">
+            {t("generalSettings.settings.language.label")}{" "}
+          </div>
+
+          <Select
+            placeholder={t("generalSettings.settings.language.placeholder")}
+            showSearch
+            options={supportLanguage}
+            value={locale}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0 ||
+              option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+            onChange={(value) => {
+              changeLocale(value)
+            }}
+            style={{
+              width: "100%"
+            }}
+          />
+        </div>
       </div>
+
       <div className="border border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
-        <h2 className="text-md mb-4 font-semibold dark:text-white">
-          {t("generalSettings.settings.speechRecognitionLang.label")}{" "}
-        </h2>
-        <Select
-          placeholder={t(
-            "generalSettings.settings.speechRecognitionLang.placeholder"
-          )}
-          allowClear
-          showSearch
-          options={SUPPORTED_LANGUAGES}
-          value={speechToTextLanguage}
-          filterOption={(input, option) =>
-            option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0 ||
-            option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }
-          onChange={(value) => {
-            setSpeechToTextLanguage(value)
-          }}
-          style={{
-            width: "100%"
-          }}
-        />
+        <TTSModeSettings hideBorder />
       </div>
       <div className="border border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
         <h2 className="text-md mb-4 font-semibold dark:text-white">

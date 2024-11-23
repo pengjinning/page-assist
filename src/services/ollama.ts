@@ -1,6 +1,11 @@
 import { Storage } from "@plasmohq/storage"
 import { cleanUrl } from "../libs/clean-url"
-import { chromeRunTime } from "../libs/runtime"
+import { urlRewriteRuntime } from "../libs/runtime"
+import { getChromeAIModel } from "./chrome"
+import { setNoOfRetrievedDocs, setTotalFilePerKB } from "./app"
+import fetcher from "@/libs/fetcher"
+import { ollamaFormatAllCustomModels } from "@/db/models"
+
 
 const storage = new Storage()
 
@@ -11,22 +16,52 @@ const DEFAULT_PAGE_SHARE_URL = "https://pageassist.xyz"
 const DEFAULT_RAG_QUESTION_PROMPT =
   "Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.   Chat History: {chat_history} Follow Up Input: {question} Standalone question:"
 
-const DEFAUTL_RAG_SYSTEM_PROMPT = `You are a helpful AI assistant. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context.  {context}  Question: {question} Helpful answer in markdown:`
+const DEFAUTL_RAG_SYSTEM_PROMPT = `You are a helpful AI assistant. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context.  {context}  Question: {question} Helpful answer:`
+
+const DEFAULT_WEBSEARCH_PROMP = `You are an AI model who is expert at searching the web and answering user's queries.
+
+Generate a response that is informative and relevant to the user's query based on provided search results. the current date and time are {current_date_time}.
+
+\`search-results\` block provides knowledge from the web search results. You can use this information to generate a meaningful response.
+
+<search-results>
+ {search_results}
+</search-results>
+`
+
+const DEFAULT_WEBSEARCH_FOLLOWUP_PROMPT = `You will give a follow-up question.  You need to rephrase the follow-up question if needed so it is a standalone question that can be used by the AI model to search the internet.
+
+Example:
+
+Follow-up question: What are the symptoms of a heart attack?
+
+Rephrased question: Symptoms of a heart attack.
+
+Follow-up question: Where is the upcoming Olympics being held?
+
+Rephrased question: Location of the upcoming Olympics.
+
+Follow-up question: Taylor Swift's latest album?
+
+Rephrased question: Name of Taylor Swift's latest album.
 
 
-const DEFAULT_WEBSEARCH_PROMP = `You are a helpful assistant that can answer any questions. You can use the following search results in case you want to answer questions about anything in real-time. The current date and time are {current_date_time}.  
+Previous Conversation:
 
-Search results: 
+{chat_history}
 
-{search_results}`
+Follow-up question: {question}
+
+Rephrased question:
+`
 
 export const getOllamaURL = async () => {
   const ollamaURL = await storage.get("ollamaURL")
   if (!ollamaURL || ollamaURL.length === 0) {
-    await chromeRunTime(DEFAULT_OLLAMA_URL)
+    await urlRewriteRuntime(DEFAULT_OLLAMA_URL)
     return DEFAULT_OLLAMA_URL
   }
-  await chromeRunTime(cleanUrl(ollamaURL))
+  await urlRewriteRuntime(cleanUrl(ollamaURL))
   return ollamaURL
 }
 
@@ -50,7 +85,7 @@ export const defaultModel = async () => {
 export const isOllamaRunning = async () => {
   try {
     const baseUrl = await getOllamaURL()
-    const response = await fetch(`${cleanUrl(baseUrl)}`)
+    const response = await fetcher(`${cleanUrl(baseUrl)}`)
     if (!response.ok) {
       throw new Error(response.statusText)
     }
@@ -61,10 +96,15 @@ export const isOllamaRunning = async () => {
   }
 }
 
-export const getAllModels = async ({ returnEmpty = false }: { returnEmpty?: boolean }) => {
+export const getAllModels = async ({
+  returnEmpty = false
+}: {
+  returnEmpty?: boolean
+}) => {
   try {
+
     const baseUrl = await getOllamaURL()
-    const response = await fetch(`${cleanUrl(baseUrl)}/api/tags`)
+    const response = await fetcher(`${cleanUrl(baseUrl)}/api/tags`)
     if (!response.ok) {
       if (returnEmpty) {
         return []
@@ -94,9 +134,31 @@ export const getAllModels = async ({ returnEmpty = false }: { returnEmpty?: bool
   }
 }
 
+export const getEmbeddingModels = async ({ returnEmpty }: {
+  returnEmpty?: boolean
+}) => {
+  try {
+    const ollamaModels = await getAllModels({ returnEmpty })
+    const customModels = await ollamaFormatAllCustomModels("embedding")
+
+    return [
+      ...ollamaModels.map((model) => {
+        return {
+          ...model,
+          provider: "ollama"
+        }
+      }),
+      ...customModels
+    ]
+  } catch (e) {
+    console.error(e)
+    return []
+  }
+}
+
 export const deleteModel = async (model: string) => {
   const baseUrl = await getOllamaURL()
-  const response = await fetch(`${cleanUrl(baseUrl)}/api/delete`, {
+  const response = await fetcher(`${cleanUrl(baseUrl)}/api/delete`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json"
@@ -107,41 +169,57 @@ export const deleteModel = async (model: string) => {
   if (!response.ok) {
     throw new Error(response.statusText)
   }
-  return response.json()
+  return "ok"
 }
 
-export const fetchChatModels = async () => {
+
+export const fetchChatModels = async ({
+  returnEmpty = false
+}: {
+  returnEmpty?: boolean
+}) => {
   try {
-    const baseUrl = await getOllamaURL()
-    const response = await fetch(`${cleanUrl(baseUrl)}/api/tags`)
-    if (!response.ok) {
-      throw new Error(response.statusText)
-    }
-    const json = await response.json()
-    const models = json.models as {
-      name: string
-      model: string
-      modified_at: string
-      size: number
-      digest: string
-      details: {
-        parent_model: string
-        format: string
-        family: string
-        families: string[]
-        parameter_size: string
-        quantization_level: string
-      }
-    }[]
-    return models.filter((model) => {
-      return (
-        !model?.details?.families?.includes("bert") &&
-        !model?.details?.families?.includes("nomic-bert")
-      )
-    })
+
+    const models = await getAllModels({ returnEmpty })
+
+    const chatModels = models
+      ?.filter((model) => {
+        return (
+          !model?.details?.families?.includes("bert") &&
+          !model?.details?.families?.includes("nomic-bert")
+        )
+      })
+      .map((model) => {
+        return {
+          ...model,
+          provider: "ollama"
+        }
+      })
+    const chromeModel = await getChromeAIModel()
+
+    const customModels = await ollamaFormatAllCustomModels("chat")
+
+    return [
+      ...chatModels,
+      ...chromeModel,
+      ...customModels
+    ]
   } catch (e) {
     console.error(e)
-    return []
+    const allModels = await getAllModels({ returnEmpty })
+    const models = allModels.map((model) => {
+      return {
+        ...model,
+        provider: "ollama"
+      }
+    })
+    const chromeModel = await getChromeAIModel()
+    const customModels = await ollamaFormatAllCustomModels("chat")
+    return [
+      ...models,
+      ...chromeModel,
+      ...customModels
+    ]
   }
 }
 
@@ -153,7 +231,7 @@ export const setOllamaURL = async (ollamaURL: string) => {
       "http://127.0.0.1:"
     )
   }
-  await chromeRunTime(cleanUrl(formattedUrl))
+  await urlRewriteRuntime(cleanUrl(formattedUrl))
   await storage.set("ollamaURL", cleanUrl(formattedUrl))
 }
 
@@ -257,13 +335,18 @@ export const setDefaultEmbeddingChunkOverlap = async (overlap: number) => {
 export const saveForRag = async (
   model: string,
   chunkSize: number,
-  overlap: number
+  overlap: number,
+  totalFilePerKB: number,
+  noOfRetrievedDocs?: number
 ) => {
   await setDefaultEmbeddingModelForRag(model)
   await setDefaultEmbeddingChunkSize(chunkSize)
   await setDefaultEmbeddingChunkOverlap(overlap)
+  await setTotalFilePerKB(totalFilePerKB)
+  if (noOfRetrievedDocs) {
+    await setNoOfRetrievedDocs(noOfRetrievedDocs)
+  }
 }
-
 
 export const getWebSearchPrompt = async () => {
   const prompt = await storage.get("webSearchPrompt")
@@ -280,34 +363,18 @@ export const setWebSearchPrompt = async (prompt: string) => {
 export const geWebSearchFollowUpPrompt = async () => {
   const prompt = await storage.get("webSearchFollowUpPrompt")
   if (!prompt || prompt.length === 0) {
-    return DEFAULT_RAG_QUESTION_PROMPT;
+    return DEFAULT_WEBSEARCH_FOLLOWUP_PROMPT
   }
   return prompt
 }
-
 
 export const setWebSearchFollowUpPrompt = async (prompt: string) => {
   await storage.set("webSearchFollowUpPrompt", prompt)
 }
 
-
 export const setWebPrompts = async (prompt: string, followUpPrompt: string) => {
   await setWebSearchPrompt(prompt)
   await setWebSearchFollowUpPrompt(followUpPrompt)
-}
-
-export const getIsSimpleInternetSearch = async () => {
-  const isSimpleInternetSearch = await storage.get("isSimpleInternetSearch")
-  if (!isSimpleInternetSearch || isSimpleInternetSearch.length === 0) {
-    return true
-  }
-  return isSimpleInternetSearch === "true"
-}
-
-
-
-export const setIsSimpleInternetSearch = async (isSimpleInternetSearch: boolean) => {
-  await storage.set("isSimpleInternetSearch", isSimpleInternetSearch.toString())
 }
 
 export const getPageShareUrl = async () => {
@@ -318,7 +385,16 @@ export const getPageShareUrl = async () => {
   return pageShareUrl
 }
 
-
 export const setPageShareUrl = async (pageShareUrl: string) => {
   await storage.set("pageShareUrl", pageShareUrl)
+}
+
+
+export const isOllamaEnabled = async () => {
+  const ollamaStatus = await storage.get<boolean>("checkOllamaStatus")
+  // if data is empty or null then return true 
+  if (typeof ollamaStatus === "undefined" || ollamaStatus === null) {
+    return true
+  }
+  return ollamaStatus
 }

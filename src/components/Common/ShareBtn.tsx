@@ -7,11 +7,13 @@ import React from "react"
 import { useMutation } from "@tanstack/react-query"
 import { getPageShareUrl } from "~/services/ollama"
 import { cleanUrl } from "~/libs/clean-url"
-import { getUserId, saveWebshare } from "~/libs/db"
+import { getTitleById, getUserId, saveWebshare } from "@/db"
 import { useTranslation } from "react-i18next"
+import fetcher from "@/libs/fetcher"
 
 type Props = {
   messages: Message[]
+  historyId: string
 }
 
 const reformatMessages = (messages: Message[], username: string) => {
@@ -75,7 +77,7 @@ export const PlaygroundMessage = (
   )
 }
 
-export const ShareBtn: React.FC<Props> = ({ messages }) => {
+export const ShareBtn: React.FC<Props> = ({ messages, historyId }) => {
   const { t } = useTranslation("common")
   const [open, setOpen] = useState(false)
   const [form] = Form.useForm()
@@ -83,18 +85,20 @@ export const ShareBtn: React.FC<Props> = ({ messages }) => {
 
   React.useEffect(() => {
     if (messages.length > 0) {
-      form.setFieldsValue({
-        title: messages[0].message
+      getTitleById(historyId).then((title) => {
+        form.setFieldsValue({
+          title
+        })
       })
     }
-  }, [messages])
+  }, [messages, historyId])
 
   const onSubmit = async (values: { title: string; name: string }) => {
     const owner_id = await getUserId()
     const chat = reformatMessages(messages, values.name)
     const title = values.title
     const url = await getPageShareUrl()
-    const res = await fetch(`${cleanUrl(url)}/api/v1/share/create`, {
+    const res = await fetcher(`${cleanUrl(url)}/api/v1/share/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

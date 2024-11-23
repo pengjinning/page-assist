@@ -1,13 +1,27 @@
 import Markdown from "../../Common/Markdown"
 import React from "react"
-import { Image, Tooltip } from "antd"
+import { Tag, Image, Tooltip, Collapse, Popover } from "antd"
 import { WebSearch } from "./WebSearch"
-import { CheckIcon, ClipboardIcon, Pen, RotateCcw } from "lucide-react"
+import {
+  CheckIcon,
+  ClipboardIcon,
+  InfoIcon,
+  Pen,
+  PlayIcon,
+  RotateCcw,
+  Square
+} from "lucide-react"
 import { EditMessageForm } from "./EditMessageForm"
 import { useTranslation } from "react-i18next"
+import { MessageSource } from "./MessageSource"
+import { useTTS } from "@/hooks/useTTS"
+import { tagColors } from "@/utils/color"
+import { removeModelSuffix } from "@/db/models"
+import { GenerationInfo } from "./GenerationInfo"
 
 type Props = {
   message: string
+  message_type?: string
   hideCopy?: boolean
   botAvatar?: JSX.Element
   userAvatar?: JSX.Element
@@ -17,12 +31,15 @@ type Props = {
   currentMessageIndex: number
   totalMessages: number
   onRengerate: () => void
-  onEditFormSubmit: (value: string) => void
+  onEditFormSubmit: (value: string, isSend: boolean) => void
   isProcessing: boolean
   webSearch?: {}
   isSearchingInternet?: boolean
   sources?: any[]
   hideEditAndRegenerate?: boolean
+  onSourceClick?: (source: any) => void
+  isTTSEnabled?: boolean
+  generationInfo?: any
 }
 
 export const PlaygroundMessage = (props: Props) => {
@@ -30,11 +47,12 @@ export const PlaygroundMessage = (props: Props) => {
   const [editMode, setEditMode] = React.useState(false)
 
   const { t } = useTranslation("common")
+  const { cancel, isSpeaking, speak } = useTTS()
 
   return (
     <div className="group w-full text-gray-800 dark:text-gray-100">
-      <div className="text-base  md:max-w-2xl lg:max-w-xl xl:max-w-3xl flex lg:px-0 m-auto w-full">
-        <div className="flex flex-row gap-4 md:gap-6 md:max-w-2xl lg:max-w-xl xl:max-w-3xl p-4 md:py-6 lg:px-0 m-auto w-full">
+      <div className="text-base md:max-w-2xl lg:max-w-xl xl:max-w-3xl  flex lg:px-0 m-auto w-full">
+        <div className="flex flex-row gap-4 md:gap-6 p-4 md:py-6 lg:px-0 m-auto w-full">
           <div className="w-8 flex flex-col relative items-end">
             <div className="relative h-7 w-7 p-1 rounded-sm text-white flex items-center justify-center  text-opacity-100r">
               {props.isBot ? (
@@ -52,7 +70,13 @@ export const PlaygroundMessage = (props: Props) => {
           </div>
           <div className="flex w-[calc(100%-50px)] flex-col gap-3 lg:w-[calc(100%-115px)]">
             <span className="text-xs font-bold text-gray-800 dark:text-white">
-              {props.isBot ? props.name : "You"}
+              {props.isBot
+                ? props.name === "chrome::gemini-nano::page-assist"
+                  ? "Gemini Nano"
+                  : removeModelSuffix(
+                      props.name?.replaceAll(/accounts\/[^\/]+\/models\//g, "")
+                    )
+                : "You"}
             </span>
 
             {props.isBot &&
@@ -60,10 +84,26 @@ export const PlaygroundMessage = (props: Props) => {
             props.currentMessageIndex === props.totalMessages - 1 ? (
               <WebSearch />
             ) : null}
-
+            <div>
+              {props?.message_type && (
+                <Tag color={tagColors[props?.message_type] || "default"}>
+                  {t(`copilot.${props?.message_type}`)}
+                </Tag>
+              )}
+            </div>
             <div className="flex flex-grow flex-col">
               {!editMode ? (
-                <Markdown message={props.message} />
+                props.isBot ? (
+                  <Markdown message={props.message} />
+                ) : (
+                  <p
+                    className={`prose dark:prose-invert whitespace-pre-line	 prose-p:leading-relaxed prose-pre:p-0 dark:prose-dark ${
+                      props.message_type &&
+                      "italic text-gray-500 dark:text-gray-400 text-sm"
+                    }`}>
+                    {props.message}
+                  </p>
+                )
               ) : (
                 <EditMessageForm
                   value={props.message}
@@ -93,17 +133,31 @@ export const PlaygroundMessage = (props: Props) => {
               )}
 
             {props.isBot && props?.sources && props?.sources.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {props?.sources?.map((source, index) => (
-                  <a
-                    key={index}
-                    href={source?.url}
-                    target="_blank"
-                    className="inline-flex cursor-pointer transition-shadow duration-300 ease-in-out hover:shadow-lg  items-center rounded-md bg-gray-100 p-1 text-xs text-gray-800 border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 opacity-80 hover:opacity-100">
-                    <span className="text-xs">{source.name}</span>
-                  </a>
-                ))}
-              </div>
+              <Collapse
+                className="mt-6"
+                ghost
+                items={[
+                  {
+                    key: "1",
+                    label: (
+                      <div className="italic text-gray-500 dark:text-gray-400">
+                        {t("citations")}
+                      </div>
+                    ),
+                    children: (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {props?.sources?.map((source, index) => (
+                          <MessageSource
+                            onSourceClick={props.onSourceClick}
+                            key={index}
+                            source={source}
+                          />
+                        ))}
+                      </div>
+                    )
+                  }
+                ]}
+              />
             )}
             {!props.isProcessing && !editMode && (
               <div
@@ -112,11 +166,31 @@ export const PlaygroundMessage = (props: Props) => {
                     ? "hidden group-hover:flex"
                     : "flex"
                 }`}>
+                {props.isTTSEnabled && (
+                  <Tooltip title={t("tts")}>
+                    <button
+                      onClick={() => {
+                        if (isSpeaking) {
+                          cancel()
+                        } else {
+                          speak({
+                            utterance: props.message
+                          })
+                        }
+                      }}
+                      className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                      {!isSpeaking ? (
+                        <PlayIcon className="w-3 h-3 text-gray-400 group-hover:text-gray-500" />
+                      ) : (
+                        <Square className="w-3 h-3 text-red-400 group-hover:text-red-500" />
+                      )}
+                    </button>
+                  </Tooltip>
+                )}
                 {props.isBot && (
                   <>
                     {!props.hideCopy && (
-                      <Tooltip title={t("copyToClipboard")}
-                      >
+                      <Tooltip title={t("copyToClipboard")}>
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(props.message)
@@ -135,10 +209,21 @@ export const PlaygroundMessage = (props: Props) => {
                       </Tooltip>
                     )}
 
+                    {props.generationInfo && (
+                      <Popover
+                        content={
+                         <GenerationInfo generationInfo={props.generationInfo} />
+                        }
+                        title={t("generationInfo")}>
+                        <button className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                          <InfoIcon className="w-3 h-3 text-gray-400 group-hover:text-gray-500" />
+                        </button>
+                      </Popover>
+                    )}
+
                     {!props.hideEditAndRegenerate &&
                       props.currentMessageIndex === props.totalMessages - 1 && (
-                        <Tooltip title={t("regenerate")}
-                        >
+                        <Tooltip title={t("regenerate")}>
                           <button
                             onClick={props.onRengerate}
                             className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
@@ -149,8 +234,7 @@ export const PlaygroundMessage = (props: Props) => {
                   </>
                 )}
                 {!props.hideEditAndRegenerate && (
-                  <Tooltip title={t("edit")}
-                  >
+                  <Tooltip title={t("edit")}>
                     <button
                       onClick={() => setEditMode(true)}
                       className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
