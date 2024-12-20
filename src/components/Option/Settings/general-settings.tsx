@@ -27,6 +27,11 @@ export const GeneralSettings = () => {
     false
   )
 
+  const [webUIResumeLastChat, setWebUIResumeLastChat] = useStorage(
+    "webUIResumeLastChat",
+    false
+  )
+
   const [restoreLastChatModel, setRestoreLastChatModel] = useStorage(
     "restoreLastChatModel",
     false
@@ -111,6 +116,17 @@ export const GeneralSettings = () => {
         <Switch
           checked={copilotResumeLastChat}
           onChange={(checked) => setCopilotResumeLastChat(checked)}
+        />
+      </div>
+      <div className="flex flex-row justify-between">
+        <div className="inline-flex items-center gap-2">
+          <span className="text-gray-700   dark:text-neutral-50">
+            {t("generalSettings.settings.webUIResumeLastChat.label")}
+          </span>
+        </div>
+        <Switch
+          checked={webUIResumeLastChat}
+          onChange={(checked) => setWebUIResumeLastChat(checked)}
         />
       </div>
       <div className="flex flex-row justify-between">
@@ -204,30 +220,7 @@ export const GeneralSettings = () => {
           </h2>
           <div className="border border-b border-gray-200 dark:border-gray-600 mt-3"></div>
         </div>
-        <div className="flex flex-row mb-3 justify-between">
-          <span className="text-gray-700 dark:text-neutral-50 ">
-            {t("generalSettings.system.deleteChatHistory.label")}
-          </span>
-
-          <button
-            onClick={async () => {
-              const confirm = window.confirm(
-                t("generalSettings.system.deleteChatHistory.confirm")
-              )
-
-              if (confirm) {
-                const db = new PageAssitDatabase()
-                await db.deleteAllChatHistory()
-                queryClient.invalidateQueries({
-                  queryKey: ["fetchChatHistory"]
-                })
-                clearChat()
-              }
-            }}
-            className="bg-red-500 dark:bg-red-600 text-white dark:text-gray-200 px-4 py-2 rounded-md">
-            {t("generalSettings.system.deleteChatHistory.button")}
-          </button>
-        </div>
+       
         <div className="flex flex-row mb-3 justify-between">
           <span className="text-gray-700 dark:text-neutral-50 ">
             {t("generalSettings.system.export.label")}
@@ -258,6 +251,38 @@ export const GeneralSettings = () => {
               }
             }}
           />
+        </div>
+
+        <div className="flex flex-row mb-3 justify-between">
+          <span className="text-gray-700 dark:text-neutral-50 ">
+            {t("generalSettings.system.deleteChatHistory.label")}
+          </span>
+
+          <button
+            onClick={async () => {
+              const confirm = window.confirm(
+                t("generalSettings.system.deleteChatHistory.confirm")
+              )
+
+              if (confirm) {
+                const db = new PageAssitDatabase()
+                await db.deleteAllChatHistory()
+                queryClient.invalidateQueries({
+                  queryKey: ["fetchChatHistory"]
+                })
+                clearChat()
+                try {
+                  await browser.storage.sync.clear()
+                  await browser.storage.local.clear()
+                  await browser.storage.session.clear()
+                } catch (e) {
+                  console.log("Error clearing storage:", e)
+                }
+              }
+            }}
+            className="bg-red-500 dark:bg-red-600 text-white dark:text-gray-200 px-4 py-2 rounded-md">
+            {t("generalSettings.system.deleteChatHistory.button")}
+          </button>
         </div>
       </div>
     </dl>

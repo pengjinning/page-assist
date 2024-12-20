@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Riprendi l'ultima chat quando apri il Pannello Laterale  (Copilot)"
       },
+      "webUIResumeLastChat": {
+        "label": "Riprendi l'ultima chat quando apri l'interfaccia Web"
+      },
       "hideCurrentChatModelSettings": {
         "label": "Nascondi le impostazioni correnti del modello Chat"
       },
@@ -62,14 +65,23 @@
       },
       "visitSpecificWebsite": {
         "label": "Visita il sito web menzionato nel messaggio"
+      },
+      "searxng": {
+        "url": {
+          "label": "URL SearXNG"
+        }
+      },
+      "braveApi": {
+        "label": "Chiave API Brave",
+        "placeholder": "Inserisci la tua chiave API Brave"
       }
     },
     "system": {
       "heading": "Impostazioni di Sistema",
       "deleteChatHistory": {
-        "label": "Elimina cronologia Chat",
-        "button": "Elimina",
-        "confirm": "Sei sicuro che vuoi eliminare la tua cronologia delle chat? Questa azione non può essere annullata."
+        "label": "Reset del Sistema",
+        "button": "Reset Totale",
+        "confirm": "Sei sicuro di voler eseguire un reset del sistema? Questa operazione cancellerà tutti i dati e non può essere annullata."
       },
       "export": {
         "label": "Esporta la cronologia Chat, Base di Conoscenza, e Prompts",

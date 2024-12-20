@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Letzten Chat beim Öffnen des Seitenpanels fortsetzen (Copilot)"
       },
+      "webUIResumeLastChat": {
+        "label": "Letzten Chat beim Öffnen der Web-UI fortsetzen"
+      },
       "hideCurrentChatModelSettings": {
         "label": "Aktuelle Chat-Modell-Einstellungen ausblenden"
       },
@@ -62,14 +65,23 @@
       },
       "visitSpecificWebsite": {
         "label": "Die in der Nachricht erwähnte Website besuchen"
+      },
+      "searxng": {
+        "url": {
+          "label": "SearXNG-URL"
+        }
+      },
+      "braveApi": {
+        "label": "Brave API-Schlüssel",
+        "placeholder": "Geben Sie Ihren Brave API-Schlüssel ein"
       }
     },
     "system": {
       "heading": "Systemeinstellungen",
       "deleteChatHistory": {
-        "label": "Chatverlauf löschen",
-        "button": "Löschen",
-        "confirm": "Sind Sie sicher, dass Sie Ihren Chatverlauf löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+        "label": "System zurücksetzen",
+        "button": "Alles zurücksetzen",
+        "confirm": "Sind Sie sicher, dass Sie einen Systemreset durchführen möchten? Dies löscht alle Daten und kann nicht rückgängig gemacht werden."
       },
       "export": {
         "label": "Chatverlauf, Wissensbasis und Prompts exportieren",

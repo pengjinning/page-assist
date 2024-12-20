@@ -2,11 +2,28 @@ import React from "react"
 import { PlaygroundForm } from "./PlaygroundForm"
 import { PlaygroundChat } from "./PlaygroundChat"
 import { useMessageOption } from "@/hooks/useMessageOption"
+import { webUIResumeLastChat } from "@/services/app"
+import {
+  formatToChatHistory,
+  formatToMessage,
+  getPromptById,
+  getRecentChatFromWebUI
+} from "@/db"
+import { getLastUsedChatSystemPrompt } from "@/services/model-settings"
+import { useStoreChatModelSettings } from "@/store/model"
 
 export const Playground = () => {
   const drop = React.useRef<HTMLDivElement>(null)
   const [dropedFile, setDropedFile] = React.useState<File | undefined>()
-  const { selectedKnowledge } = useMessageOption()
+  const {
+    selectedKnowledge,
+    messages,
+    setHistoryId,
+    setHistory,
+    setMessages,
+    setSelectedSystemPrompt
+  } = useMessageOption()
+  const { setSystemPrompt } = useStoreChatModelSettings()
 
   const [dropState, setDropState] = React.useState<
     "idle" | "dragging" | "error"
@@ -71,6 +88,41 @@ export const Playground = () => {
       }
     }
   }, [selectedKnowledge])
+
+  const setRecentMessagesOnLoad = async () => {
+    const isEnabled = await webUIResumeLastChat()
+    if (!isEnabled) {
+      return
+    }
+    if (messages.length === 0) {
+      const recentChat = await getRecentChatFromWebUI()
+      if (recentChat) {
+        setHistoryId(recentChat.history.id)
+        setHistory(formatToChatHistory(recentChat.messages))
+        setMessages(formatToMessage(recentChat.messages))
+
+        const lastUsedPrompt = await getLastUsedChatSystemPrompt(
+          recentChat.history.id
+        )
+        console.log("lastUsedPrompt", lastUsedPrompt)
+        if (lastUsedPrompt) {
+          if (lastUsedPrompt.prompt_id) {
+            const prompt = await getPromptById(lastUsedPrompt.prompt_id)
+            if (prompt) {
+              setSelectedSystemPrompt(lastUsedPrompt.prompt_id)
+              setSystemPrompt(lastUsedPrompt.prompt_content)
+            }
+          }
+          setSystemPrompt(lastUsedPrompt.prompt_content)
+        }
+      }
+    }
+  }
+
+  React.useEffect(() => {
+    setRecentMessagesOnLoad()
+  }, [])
+
   return (
     <div
       ref={drop}
@@ -78,7 +130,7 @@ export const Playground = () => {
         dropState === "dragging" ? "bg-gray-100 dark:bg-gray-800 z-10" : ""
       } bg-white dark:bg-[#171717]`}>
       <PlaygroundChat />
-      
+
       <div className="flex flex-col items-center">
         <div className="flex-grow">
           <div className="w-full flex justify-center">

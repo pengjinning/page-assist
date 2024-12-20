@@ -1,5 +1,7 @@
 import { Storage } from "@plasmohq/storage"
-const storage = new Storage()
+const storage = new Storage({
+  area: "local"
+})
 
 type ModelSettings = {
   f16KV?: boolean
@@ -63,7 +65,7 @@ const keys = [
   "vocabOnly"
 ]
 
-const getAllModelSettings = async () => {
+export const getAllModelSettings = async () => {
   try {
     const settings: ModelSettings = {}
     for (const key of keys) {
@@ -80,7 +82,7 @@ const getAllModelSettings = async () => {
   }
 }
 
-const setModelSetting = async (
+export const setModelSetting = async (
   key: string,
   value: string | number | boolean
 ) => {
@@ -125,4 +127,22 @@ export const setLastUsedChatModel = async (
   await storage.set(`lastUsedChatModel-${historyId}`, model)
 }
 
-export { getAllModelSettings, setModelSetting }
+
+export const getLastUsedChatSystemPrompt = async (
+  historyId: string
+): Promise<{ prompt_id?: string; prompt_content?: string } | undefined> => {
+  return await storage.get<{ prompt_id?: string; prompt_content?: string } | undefined>(
+    `lastUsedChatSystemPrompt-${historyId}`
+  )
+}
+
+export const setLastUsedChatSystemPrompt = async (
+  historyId: string,
+  prompt: {
+    prompt_id?: string
+    prompt_content?: string
+  }
+): Promise<void> => {
+  await storage.set(`lastUsedChatSystemPrompt-${historyId}`, prompt)
+}
+

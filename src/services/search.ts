@@ -1,6 +1,9 @@
 import { Storage } from "@plasmohq/storage"
 
 const storage = new Storage()
+const storage2 = new Storage({
+  area: "local"
+})
 
 const TOTAL_SEARCH_RESULTS = 2
 const DEFAULT_PROVIDER = "google"
@@ -62,20 +65,57 @@ export const setTotalSearchResults = async (totalSearchResults: number) => {
   await storage.set("totalSearchResults", totalSearchResults.toString())
 }
 
+export const getSearxngURL = async () => {
+  const searxngURL = await storage.get("searxngURL")
+  return searxngURL || ""
+}
+
+export const isSearxngJSONMode = async () => {
+  const searxngJSONMode = await storage.get<boolean>("searxngJSONMode")
+  return searxngJSONMode ?? false
+}
+
+export const setSearxngJSONMode = async (searxngJSONMode: boolean) => {
+  await storage.set("searxngJSONMode", searxngJSONMode)
+}
+
+export const setSearxngURL = async (searxngURL: string) => {
+  await storage.set("searxngURL", searxngURL)
+}
+
+export const getBraveApiKey = async () => {
+  const braveApiKey = await storage2.get("braveApiKey")
+  return braveApiKey || ""
+}
+
+export const setBraveApiKey = async (braveApiKey: string) => {
+  await storage2.set("braveApiKey", braveApiKey)
+}
+
 export const getSearchSettings = async () => {
-  const [isSimpleInternetSearch, searchProvider, totalSearchResult, visitSpecificWebsite] =
+  const [isSimpleInternetSearch, searchProvider, totalSearchResult, visitSpecificWebsite,
+    searxngURL,
+    searxngJSONMode,
+    braveApiKey
+  ] =
     await Promise.all([
       getIsSimpleInternetSearch(),
       getSearchProvider(),
       totalSearchResults(),
-      getIsVisitSpecificWebsite()
+      getIsVisitSpecificWebsite(),
+      getSearxngURL(),
+      isSearxngJSONMode(),
+      getBraveApiKey()
     ])
 
   return {
     isSimpleInternetSearch,
     searchProvider,
     totalSearchResults: totalSearchResult,
-    visitSpecificWebsite
+    visitSpecificWebsite,
+    searxngURL,
+    searxngJSONMode,
+    braveApiKey
   }
 }
 
@@ -83,17 +123,26 @@ export const setSearchSettings = async ({
   isSimpleInternetSearch,
   searchProvider,
   totalSearchResults,
-  visitSpecificWebsite
+  visitSpecificWebsite,
+  searxngJSONMode,
+  searxngURL,
+  braveApiKey
 }: {
   isSimpleInternetSearch: boolean
   searchProvider: string
   totalSearchResults: number
   visitSpecificWebsite: boolean
+  searxngURL: string
+  searxngJSONMode: boolean,
+  braveApiKey: string
 }) => {
   await Promise.all([
     setIsSimpleInternetSearch(isSimpleInternetSearch),
     setSearchProvider(searchProvider),
     setTotalSearchResults(totalSearchResults),
-    setIsVisitSpecificWebsite(visitSpecificWebsite)
+    setIsVisitSpecificWebsite(visitSpecificWebsite),
+    setSearxngJSONMode(searxngJSONMode),
+    setSearxngURL(searxngURL),
+    setBraveApiKey(braveApiKey)
   ])
 }

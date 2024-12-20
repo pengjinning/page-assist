@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Retomar el último chat al abrir el Panel Lateral (Copilot)"
       },
+      "webUIResumeLastChat": {
+        "label": "Retomar el último chat al abrir la Interfaz Web"
+      },
       "hideCurrentChatModelSettings": {
         "label": "Ocultar Configuraciones del Modelo de Chat Actual"
       },
@@ -62,14 +65,23 @@
       },
       "visitSpecificWebsite": {
         "label": "Visita el sitio web mencionado en el mensaje"
+      },
+      "searxng": {
+        "url": {
+          "label": "URL de SearXNG"
+        }
+      },
+      "braveApi": {
+        "label": "Clave API de Brave",
+        "placeholder": "Ingrese su clave API de Brave"
       }
     },
     "system": {
       "heading": "Configuraciones del Sistema",
       "deleteChatHistory": {
-        "label": "Borrar Histórico del Chat",
-        "button": "Borrar",
-        "confirm": "¿Esta seguro que desea borrar su histórico del chat? Esta acción no podra ser desecha."
+        "label": "Reinicio del Sistema",
+        "button": "Reiniciar Todo",
+        "confirm": "¿Está seguro de que desea realizar un reinicio del sistema? Esto borrará todos los datos y no se puede deshacer."
       },
       "export": {
         "label": "Exportar Histórico del Chat, Base de Conocimiento y Prompts",
