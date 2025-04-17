@@ -24,6 +24,9 @@
       "copilotResumeLastChat": {
         "label": "打开侧边栏时恢复上次聊天（Copilot）"
       },
+      "turnOnChatWithWebsite": {
+        "label": "默认启用与网站对话（Copilot）"
+      },
       "webUIResumeLastChat": {
         "label": "打开Web UI时恢复上次聊天"
       },
@@ -41,6 +44,18 @@
       },
       "ollamaStatus": {
         "label": "启用或禁用Ollama连接状态检查"
+      },
+      "wideMode": {
+        "label": "启用宽屏模式"
+      },
+      "openReasoning": {
+        "label": "默认展开推理过程"
+      },
+      "userChatBubble": {
+        "label": "使用聊天气泡显示用户消息"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "自动复制回复到剪贴板"
       }
     },
     "sidepanelRag": {
@@ -77,6 +92,9 @@
       "braveApi": {
         "label": "Brave API 密钥",
         "placeholder": "输入您的 Brave API 密钥"
+      },
+      "searchOnByDefault": {
+        "label": "默认开启网络搜索"
       }
     },
     "system": {
@@ -113,6 +131,19 @@
       },
       "ssmlEnabled": {
         "label": "启用SSML(语音合成标记语言)"
+      },
+      "removeReasoningTagTTS": {
+        "label": "从语音合成中移除推理标签"
+      }
+    },
+    "stt": {
+      "heading": "语音转文本设置",
+      "autoStopTimeout": {
+        "label": "自动停止超时（毫秒）",
+        "placeholder": "输入自动停止超时时间（毫秒）"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "自动提交语音消息"
       }
     }
   },
@@ -263,7 +294,10 @@
         "label": "Ollama URL",
         "placeholder": "输入 Ollama URL"
       },
-
+      "globalEnable": {
+        "label": "启用或禁用全局 Ollama 集成",
+        "warning": "通过全局禁用 Ollama 集成，Page Assist 将不会从 Ollama 获取模型。您仍然可以从<anchor>OpenAI 兼容 API</anchor>部分添加 Ollama 实例，这将正常工作。"
+      },
       "advanced": {
         "label": "Ollama URL 高级配置",
         "urlRewriteEnabled": {
@@ -272,6 +306,9 @@
         "rewriteUrl": {
           "label": "自定义来源 URL",
           "placeholder": "输入自定义来源 URL"
+        },
+        "autoCORSFix": {
+          "label": "启用或禁用自动 Ollama CORS 修复"
         },
         "headers": {
           "label": "自定义头部",
@@ -336,6 +373,14 @@
         "label": "检索文档数量",
         "placeholder": "输入检索文档数量",
         "required": "请输入检索文档数量"
+      },
+      "splittingSeparator": {
+        "label": "分隔符",
+        "placeholder": "输入分隔符（例如：\\n\\n）",
+        "required": "请输入分隔符"
+      },
+      "splittingStrategy": {
+        "label": "文本分割器"
       }
     },
     "prompt": {

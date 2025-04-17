@@ -37,6 +37,10 @@ export const supportLanguage = [
         value: "zh-CN"
     },
     {
+        label: "繁體中文",
+        value: "zh-TW"
+    },
+    {
         label: "日本語",
         value: "ja-JP"
     },
@@ -63,5 +67,9 @@ export const supportLanguage = [
     {
         value: "ko",
         label: "한국어"
+    },
+    {
+        value: "ar",
+        label: "العربية"
     }
 ]

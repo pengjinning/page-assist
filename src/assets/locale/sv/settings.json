@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Återuppta den senaste chatten när du öppnar sidopanelen (Copilot)"
       },
+      "turnOnChatWithWebsite": {
+        "label": "Aktivera Chatta med Webbplats som standard (Copilot)"
+      },
       "webUIResumeLastChat": {
         "label": "Återuppta den senaste chatten när du öppnar webbgränssnittet"
       },
@@ -38,6 +41,18 @@
       },
       "ollamaStatus": {
         "label": "Aktivera eller inaktivera Ollama anslutningsstatuskontroll"
+      },
+      "wideMode": {
+        "label": "Aktivera bredskärmsläge"
+      },
+      "openReasoning": {
+        "label": "Öppna resonemang kollapsat som standard"
+      },
+      "userChatBubble": {
+        "label": "Använd chattbubbla för användarmeddelanden"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "Kopiera svar automatiskt till urklipp"
       }
     },
     "sidepanelRag": {
@@ -74,6 +89,9 @@
       "braveApi": {
         "label": "Brave API-nyckel",
         "placeholder": "Ange din Brave API-nyckel"
+      },
+      "searchOnByDefault": {
+        "label": "Internetsökning PÅ som standard"
       }
     },
     "system": {
@@ -110,6 +128,19 @@
       },
       "ssmlEnabled": {
         "label": "Aktivera SSML (Speech Synthesis Markup Language)"
+      },
+      "removeReasoningTagTTS": {
+        "label": "Ta bort resonemangstagg från Text till Tal"
+      }
+    },
+    "stt": {
+      "heading": "Tal till Text Inställningar",
+      "autoStopTimeout": {
+        "label": "Automatiskt Stopptidsgräns (ms)",
+        "placeholder": "Ange automatisk stopptidsgräns i millisekunder"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "Skicka Röstmeddelande Automatiskt"
       }
     }
   },
@@ -259,6 +290,10 @@
         "label": "Ollama URL",
         "placeholder": "Ange Ollama URL"
       },
+      "globalEnable": {
+        "label": "Aktivera eller inaktivera Ollama-integration globalt",
+        "warning": "Genom att inaktivera Ollama-integration globalt kommer Page Assist inte att hämta modeller från Ollama. Du kan fortfarande lägga till Ollama-instans från <anchor>OpenAI-kompatibel API</anchor>-sektionen som kommer att fungera bra."
+      },
       "advanced": {
         "label": "Avancerad Ollama URL-konfiguration",
         "urlRewriteEnabled": {
@@ -267,6 +302,9 @@
         "rewriteUrl": {
           "label": "Custom ursprungs-URL",
           "placeholder": "Ange Custom ursprungs-URL"
+        },
+        "autoCORSFix": {
+          "label": "Aktivera eller inaktivera automatisk Ollama CORS-korrigering"
         },
         "headers": {
           "label": "Custom Headers",
@@ -331,6 +369,14 @@
         "label": "Antal hämtade dokument",
         "placeholder": "Ange antal hämtade dokument",
         "required": "Vänligen ange antal hämtade dokument"
+      },
+      "splittingSeparator": {
+        "label": "Separator",
+        "placeholder": "Ange separator (t.ex. \\n\\n)",
+        "required": "Vänligen ange en separator"
+      },
+      "splittingStrategy": {
+        "label": "Textdelare"
       }
     },
     "prompt": {

@@ -3,15 +3,14 @@ import { cleanUrl } from "~/libs/clean-url"
 import { getSearxngURL, isSearxngJSONMode, getIsSimpleInternetSearch, totalSearchResults } from "@/services/search"
 import { pageAssistEmbeddingModel } from "@/models/embedding"
 import type { Document } from "@langchain/core/documents"
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter"
 import { MemoryVectorStore } from "langchain/vectorstores/memory"
 import { PageAssistHtmlLoader } from "~/loader/html"
 import {
-  defaultEmbeddingChunkOverlap,
-  defaultEmbeddingChunkSize,
   defaultEmbeddingModelForRag,
-  getOllamaURL
+  getOllamaURL,
+  getSelectedModel
 } from "~/services/ollama"
+import { getPageAssistTextSplitter } from "@/utils/text-splitter"
 
 interface SearxNGJSONResult {
   title: string
@@ -56,7 +55,7 @@ export const searxngSearch = async (query: string) => {
         html: "",
         url: result.link
       })
-  
+
       const documents = await loader.loadByURL()
       documents.forEach((doc) => {
         docs.push(doc)
@@ -68,17 +67,14 @@ export const searxngSearch = async (query: string) => {
 
   const ollamaUrl = await getOllamaURL()
   const embeddingModel = await defaultEmbeddingModelForRag()
+  const selectedModel = await getSelectedModel()
   const ollamaEmbedding = await pageAssistEmbeddingModel({
-    model: embeddingModel || "",
+    model: embeddingModel || selectedModel || "",
     baseUrl: cleanUrl(ollamaUrl)
   })
 
-  const chunkSize = await defaultEmbeddingChunkSize()
-  const chunkOverlap = await defaultEmbeddingChunkOverlap()
-  const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize,
-    chunkOverlap
-  })
+
+  const textSplitter = await getPageAssistTextSplitter();
 
   const chunks = await textSplitter.splitDocuments(docs)
   const store = new MemoryVectorStore(ollamaEmbedding)

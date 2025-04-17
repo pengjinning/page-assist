@@ -6,16 +6,20 @@ const storage2 = new Storage({
 })
 
 const TOTAL_SEARCH_RESULTS = 2
-const DEFAULT_PROVIDER = "google"
+const DEFAULT_PROVIDER = "duckduckgo"
 
 const AVAILABLE_PROVIDERS = ["google", "duckduckgo"] as const
 
 export const getIsSimpleInternetSearch = async () => {
+ try {
   const isSimpleInternetSearch = await storage.get("isSimpleInternetSearch")
   if (!isSimpleInternetSearch || isSimpleInternetSearch.length === 0) {
     return true
   }
   return isSimpleInternetSearch === "true"
+ } catch(e) {
+  return true
+ }
 }
 
 export const getIsVisitSpecificWebsite = async () => {
@@ -25,7 +29,6 @@ export const getIsVisitSpecificWebsite = async () => {
   }
   return isVisitSpecificWebsite === "true"
 }
-
 
 export const setIsVisitSpecificWebsite = async (
   isVisitSpecificWebsite: boolean
@@ -88,25 +91,74 @@ export const getBraveApiKey = async () => {
   return braveApiKey || ""
 }
 
+export const getTavilyApiKey = async () => {
+  const tavilyApiKey = await storage2.get("tavilyApiKey")
+  return tavilyApiKey || ""
+}
+
 export const setBraveApiKey = async (braveApiKey: string) => {
   await storage2.set("braveApiKey", braveApiKey)
 }
 
+export const getExaAPIKey = async () => {
+  const exaAPIKey = await storage2.get("exaAPIKey")
+  return exaAPIKey || ""
+}
+
+export const setExaAPIKey = async (exaAPIKey: string) => {
+  await storage2.set("exaAPIKey", exaAPIKey)
+}
+
+export const setTavilyApiKey = async (tavilyApiKey: string) => {
+  await storage2.set("tavilyApiKey", tavilyApiKey)
+}
+
+export const getGoogleDomain = async () => {
+  const domain = await storage2.get("searchGoogleDomain")
+  return domain || "google.com"
+}
+
+export const setGoogleDomain = async (domain: string) => {
+  await storage2.set("searchGoogleDomain", domain)
+}
+
+export const getInternetSearchOn = async () => {
+  const defaultInternetSearchOn = await storage.get<boolean | undefined>(
+    "defaultInternetSearchOn"
+  )
+  return defaultInternetSearchOn ?? false
+}
+
+export const setInternetSearchOn = async (defaultInternetSearchOn: boolean) => {
+  await storage.set("defaultInternetSearchOn", defaultInternetSearchOn)
+}
+
 export const getSearchSettings = async () => {
-  const [isSimpleInternetSearch, searchProvider, totalSearchResult, visitSpecificWebsite,
+  const [
+    isSimpleInternetSearch,
+    searchProvider,
+    totalSearchResult,
+    visitSpecificWebsite,
     searxngURL,
     searxngJSONMode,
-    braveApiKey
-  ] =
-    await Promise.all([
-      getIsSimpleInternetSearch(),
-      getSearchProvider(),
-      totalSearchResults(),
-      getIsVisitSpecificWebsite(),
-      getSearxngURL(),
-      isSearxngJSONMode(),
-      getBraveApiKey()
-    ])
+    braveApiKey,
+    tavilyApiKey,
+    googleDomain,
+    defaultInternetSearchOn,
+    exaAPIKey
+  ] = await Promise.all([
+    getIsSimpleInternetSearch(),
+    getSearchProvider(),
+    totalSearchResults(),
+    getIsVisitSpecificWebsite(),
+    getSearxngURL(),
+    isSearxngJSONMode(),
+    getBraveApiKey(),
+    getTavilyApiKey(),
+    getGoogleDomain(),
+    getInternetSearchOn(),
+    getExaAPIKey()
+  ])
 
   return {
     isSimpleInternetSearch,
@@ -115,7 +167,11 @@ export const getSearchSettings = async () => {
     visitSpecificWebsite,
     searxngURL,
     searxngJSONMode,
-    braveApiKey
+    braveApiKey,
+    tavilyApiKey,
+    googleDomain,
+    defaultInternetSearchOn,
+    exaAPIKey
   }
 }
 
@@ -126,15 +182,23 @@ export const setSearchSettings = async ({
   visitSpecificWebsite,
   searxngJSONMode,
   searxngURL,
-  braveApiKey
+  braveApiKey,
+  tavilyApiKey,
+  googleDomain,
+  defaultInternetSearchOn,
+  exaAPIKey
 }: {
   isSimpleInternetSearch: boolean
   searchProvider: string
   totalSearchResults: number
   visitSpecificWebsite: boolean
   searxngURL: string
-  searxngJSONMode: boolean,
+  searxngJSONMode: boolean
   braveApiKey: string
+  tavilyApiKey: string
+  googleDomain: string,
+  defaultInternetSearchOn: boolean
+  exaAPIKey: string
 }) => {
   await Promise.all([
     setIsSimpleInternetSearch(isSimpleInternetSearch),
@@ -143,6 +207,10 @@ export const setSearchSettings = async ({
     setIsVisitSpecificWebsite(visitSpecificWebsite),
     setSearxngJSONMode(searxngJSONMode),
     setSearxngURL(searxngURL),
-    setBraveApiKey(braveApiKey)
+    setBraveApiKey(braveApiKey),
+    setTavilyApiKey(tavilyApiKey),
+    setGoogleDomain(googleDomain),
+    setInternetSearchOn(defaultInternetSearchOn),
+    setExaAPIKey(exaAPIKey)
   ])
 }

@@ -23,8 +23,10 @@
         "speechToText": "Fala para Texto",
         "uploadImage": "Carregar Imagem",
         "stopStreaming": "Parar Streaming",
-        "knowledge": "Conhecimento"
+        "knowledge": "Conhecimento",
+        "clearContext": "Limpar Contexto"
     },
     "sendWhenEnter": "Enviar ao pressionar Enter",
-    "welcome": "Olá! Como posso ajudar você hoje?"
+    "welcome": "Olá! Como posso ajudar você hoje?",
+    "useOCR": "Extrair texto da imagem (OCR)"
 }

@@ -40,6 +40,7 @@
   "copyToClipboard": "Copiar para a área de transferência",
   "webSearch": "Pesquisando na web",
   "regenerate": "Gerar Novamente",
+  "continue": "Continuar Resposta",
   "edit": "Editar",
   "delete": "Excluir",
   "saveAndSubmit": "Salvar & Enviar",
@@ -67,8 +68,8 @@
         "placeholder": "Digite o valor da Temperatura (ex: 0.7, 1.0)"
       },
       "numCtx": {
-        "label": "Número de Contextos",
-        "placeholder": "Digite o valor do Número de Contextos (padrão: 2048)"
+        "label": "Tamanho da Janela de Contexto (num_ctx)",
+        "placeholder": "Digite o valor do Tamanho da Janela de Contexto (padrão: 2048)"
       },
       "numPredict": {
         "label": "Máximo de Tokens (num_predict)",
@@ -116,5 +117,10 @@
   },
   "pin": "Fixar",
   "unpin": "Desafixar",
-  "generationInfo": "Informações de Geração"
+  "generationInfo": "Informações de Geração",
+  "sidebarChat": "Chat Lateral",
+  "reasoning": {
+    "thinking": "Pensando....",
+    "thought": "Pensou por {{time}}"
+  }
 }

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import React from "react"
 import {
   getOllamaURL,
@@ -7,7 +7,6 @@ import {
   setOllamaURL as saveOllamaURL,
   setPromptForRag,
   setSystemPromptForNonRag,
-  getAllModels,
   defaultEmbeddingChunkOverlap,
   defaultEmbeddingChunkSize,
   defaultEmbeddingModelForRag,
@@ -26,7 +25,7 @@ import {
 } from "antd"
 import { useDarkMode } from "~/hooks/useDarkmode"
 import { SaveButton } from "~/components/Common/SaveButton"
-import { SUPPORTED_LANGUAGES } from "~/utils/supporetd-languages"
+import { SUPPORTED_LANGUAGES } from "~/utils/supported-languages"
 import { useMessage } from "~/hooks/useMessage"
 import { MoonIcon, SunIcon } from "lucide-react"
 import { Trans, useTranslation } from "react-i18next"
@@ -36,6 +35,7 @@ import { AdvanceOllamaSettings } from "@/components/Common/Settings/AdvanceOllam
 import { useStorage } from "@plasmohq/storage/hook"
 import { getTotalFilePerKB } from "@/services/app"
 import { SidepanelRag } from "@/components/Option/Settings/sidepanel-rag"
+import { SSTSettings } from "@/components/Option/Settings/sst-settings"
 
 export const SettingsBody = () => {
   const { t } = useTranslation("settings")
@@ -54,11 +54,12 @@ export const SettingsBody = () => {
   const [hideCurrentChatModelSettings, setHideCurrentChatModelSettings] =
     useStorage("hideCurrentChatModelSettings", false)
 
-  const [ speechToTextLanguage, setSpeechToTextLanguage ] = useStorage(
+  const [speechToTextLanguage, setSpeechToTextLanguage] = useStorage(
     "speechToTextLanguage",
     "en-US"
   )
   const { mode, toggleDarkMode } = useDarkMode()
+  const queryClient = useQueryClient()
 
   const { changeLocale, locale, supportLanguage } = useI18n()
 
@@ -84,7 +85,6 @@ export const SettingsBody = () => {
         defaultEmbeddingModelForRag(),
         getTotalFilePerKB()
       ])
-
       return {
         url: ollamaURL,
         normalSystemPrompt: systemPrompt,
@@ -106,6 +106,7 @@ export const SettingsBody = () => {
       overlap: number
     }) => {
       await saveForRag(f.model, f.chunkSize, f.overlap, data.totalFilePerKB)
+      await queryClient.invalidateQueries({ queryKey: ["sidebarSettings"] })
     }
   })
 
@@ -413,7 +414,9 @@ export const SettingsBody = () => {
           />
         </div>
       </div>
-
+      <div className="border border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
+        <SSTSettings hideBorder />
+      </div>
       <div className="border border-gray-300 dark:border-gray-700 rounded p-4 bg-white dark:bg-[#171717]">
         <TTSModeSettings hideBorder />
       </div>

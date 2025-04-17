@@ -6,6 +6,8 @@ export type Message = {
   message: string
   sources: any[]
   images?: string[]
+  modelName?: string
+  modelImage?: string
 }
 
 export type ChatHistory = {
@@ -45,6 +47,9 @@ type State = {
 
   selectedQuickPrompt: string | null
   setSelectedQuickPrompt: (selectedQuickPrompt: string) => void
+
+  useOCR: boolean
+  setUseOCR: (useOCR: boolean) => void
 }
 
 export const useStoreMessage = create<State>((set) => ({
@@ -79,5 +84,8 @@ export const useStoreMessage = create<State>((set) => ({
   setSelectedSystemPrompt: (selectedSystemPrompt) =>
     set({ selectedSystemPrompt }),
   selectedQuickPrompt: null,
-  setSelectedQuickPrompt: (selectedQuickPrompt) => set({ selectedQuickPrompt })
+  setSelectedQuickPrompt: (selectedQuickPrompt) => set({ selectedQuickPrompt }),
+
+  useOCR: false,
+  setUseOCR: (useOCR) => set({ useOCR })
 }))

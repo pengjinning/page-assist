@@ -7,6 +7,16 @@ import { OpenAiIcon } from "../Icons/OpenAI"
 import { TogtherMonoIcon } from "../Icons/Togther"
 import { OpenRouterIcon } from "../Icons/OpenRouter"
 import { LLamaFile } from "../Icons/Llamafile"
+import { GeminiIcon } from "../Icons/GeminiIcon"
+import { MistarlIcon } from "../Icons/Mistral"
+import { DeepSeekIcon } from "../Icons/DeepSeek"
+import { SiliconFlowIcon } from "../Icons/SiliconFlow"
+import { VolcEngineIcon } from "../Icons/VolcEngine"
+import { TencentCloudIcon } from "../Icons/TencentCloud"
+import { AliBaBaCloudIcon } from "../Icons/AliBaBaCloud"
+import { LlamaCppLogo } from "../Icons/LlamacppLogo"
+import { InfinigenceAI } from "../Icons/InfinigenceAI"
+import { NovitaIcon } from "../Icons/Novita"
 
 export const ProviderIcons = ({
   provider,
@@ -34,6 +44,26 @@ export const ProviderIcons = ({
       return <OpenRouterIcon className={className} />
     case "llamafile":
       return <LLamaFile className={className} />
+    case "gemini":
+      return <GeminiIcon className={className} />
+    case "mistral":
+      return <MistarlIcon className={className} />
+    case "deepseek":
+      return <DeepSeekIcon className={className} />
+    case "siliconflow":
+      return <SiliconFlowIcon className={className} />
+    case "volcengine":
+      return <VolcEngineIcon className={className} />
+    case "tencentcloud":
+      return <TencentCloudIcon className={className} />
+    case "alibabacloud":
+      return <AliBaBaCloudIcon className={className} />
+    case "llamacpp":
+      return <LlamaCppLogo className={className} />
+    case "infinitenceai":
+      return <InfinigenceAI className={className} />
+    case "novita":
+      return <NovitaIcon className={className} />
     default:
       return <OllamaIcon className={className} />
   }

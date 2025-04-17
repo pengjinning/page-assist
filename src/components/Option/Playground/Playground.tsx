@@ -11,7 +11,9 @@ import {
 } from "@/db"
 import { getLastUsedChatSystemPrompt } from "@/services/model-settings"
 import { useStoreChatModelSettings } from "@/store/model"
-
+import { useSmartScroll } from "@/hooks/useSmartScroll"
+import { ChevronDown } from "lucide-react"
+import { useStorage } from "@plasmohq/storage/hook"
 export const Playground = () => {
   const drop = React.useRef<HTMLDivElement>(null)
   const [dropedFile, setDropedFile] = React.useState<File | undefined>()
@@ -21,9 +23,14 @@ export const Playground = () => {
     setHistoryId,
     setHistory,
     setMessages,
-    setSelectedSystemPrompt
+    setSelectedSystemPrompt,
+    streaming
   } = useMessageOption()
   const { setSystemPrompt } = useStoreChatModelSettings()
+  const { containerRef, isAtBottom, scrollToBottom } = useSmartScroll(
+    messages,
+    streaming
+  )
 
   const [dropState, setDropState] = React.useState<
     "idle" | "dragging" | "error"
@@ -104,7 +111,6 @@ export const Playground = () => {
         const lastUsedPrompt = await getLastUsedChatSystemPrompt(
           recentChat.history.id
         )
-        console.log("lastUsedPrompt", lastUsedPrompt)
         if (lastUsedPrompt) {
           if (lastUsedPrompt.prompt_id) {
             const prompt = await getPromptById(lastUsedPrompt.prompt_id)
@@ -126,23 +132,25 @@ export const Playground = () => {
   return (
     <div
       ref={drop}
-      className={`${
-        dropState === "dragging" ? "bg-gray-100 dark:bg-gray-800 z-10" : ""
+      className={`relative flex h-full flex-col items-center ${
+        dropState === "dragging" ? "bg-gray-100 dark:bg-gray-800" : ""
       } bg-white dark:bg-[#171717]`}>
-      <PlaygroundChat />
-
-      <div className="flex flex-col items-center">
-        <div className="flex-grow">
-          <div className="w-full flex justify-center">
-            <div className="bottom-0 w-full bg-transparent border-0 fixed pt-2">
-              <div className="stretch mx-2 flex flex-row gap-3 md:mx-4 lg:mx-auto lg:max-w-2xl xl:max-w-3xl justify-center items-center">
-                <div className="relative h-full flex-1 items-center justify-center md:flex-col">
-                  <PlaygroundForm dropedFile={dropedFile} />
-                </div>
-              </div>
-            </div>
+      <div
+        ref={containerRef}
+        className="custom-scrollbar flex h-full w-full flex-col items-center overflow-x-hidden overflow-y-auto px-5">
+        <PlaygroundChat />
+      </div>
+      <div className="absolute bottom-0 w-full">
+        {!isAtBottom && (
+          <div className="fixed bottom-28 z-20 left-0 right-0 flex justify-center">
+            <button
+              onClick={scrollToBottom}
+              className="bg-gray-50 shadow border border-gray-200 dark:border-none dark:bg-white/20 p-1.5 rounded-full pointer-events-auto">
+              <ChevronDown className="size-4 text-gray-600 dark:text-gray-300" />
+            </button>
           </div>
-        </div>
+        )}
+        <PlaygroundForm dropedFile={dropedFile} />
       </div>
     </div>
   )

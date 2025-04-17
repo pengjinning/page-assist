@@ -3,14 +3,19 @@ import {
   FileText,
   Share2,
   FileJson,
-  FileCode
+  FileCode,
+  ImageIcon
 } from "lucide-react"
 import { Dropdown, MenuProps, message } from "antd"
 import { Message } from "@/types/message"
 import { useState } from "react"
 import { ShareModal } from "../Common/ShareModal"
 import { useTranslation } from "react-i18next"
-
+import { removeModelSuffix } from "@/db/models"
+import { PlaygroundMessage } from "../Common/Playground/Message"
+import ReactDOM from "react-dom"
+import html2canvas from "html2canvas"
+import { ImageExportWrapper } from "../Common/ImageExport"
 interface MoreOptionsProps {
   messages: Message[]
   historyId: string
@@ -19,16 +24,15 @@ interface MoreOptionsProps {
 const formatAsText = (messages: Message[]) => {
   return messages
     .map((msg) => {
-      const text = `${msg.isBot ? msg.name : "You"}: ${msg.message}`
+      const text = `${msg.isBot ? removeModelSuffix(`${msg.modelName || msg.name}`?.replaceAll(/accounts\/[^\/]+\/models\//g, "")) : "You"}: ${msg.message}`
       return text
     })
     .join("\n\n")
 }
-
 const formatAsMarkdown = (messages: Message[]) => {
   return messages
     .map((msg) => {
-      let content = `**${msg.isBot ? msg.name : "You"}**:\n${msg.message}`
+      let content = `**${msg.isBot ? removeModelSuffix(`${msg.modelName || msg.name}`?.replaceAll(/accounts\/[^\/]+\/models\//g, "")) : "You"}**:\n${msg.message}`
 
       if (msg.images && msg.images.length > 0) {
         const imageMarkdown = msg.images
@@ -55,6 +59,27 @@ const downloadFile = (content: string, filename: string) => {
   URL.revokeObjectURL(url)
 }
 
+const generateChatImage = async (messages: Message[]) => {
+  const root = document.createElement("div")
+  document.body.appendChild(root)
+  const element = <ImageExportWrapper messages={messages} />
+  ReactDOM.render(element, root)
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  const container = document.getElementById("export-container")
+  if (!container) {
+    throw new Error("Export container not found")
+  }
+  const canvas = await html2canvas(container, {
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    scale: 2
+  })
+  ReactDOM.unmountComponentAtNode(root)
+  document.body.removeChild(root)
+
+  return canvas.toDataURL("image/png")
+}
+
 export const MoreOptions = ({
   shareModeEnabled = false,
   historyId,
@@ -65,7 +90,7 @@ export const MoreOptions = ({
   const baseItems: MenuProps["items"] = [
     {
       type: "group",
-      label: t("more.copy.group"), 
+      label: t("more.copy.group"),
       children: [
         {
           key: "copy-text",
@@ -73,12 +98,12 @@ export const MoreOptions = ({
           icon: <FileText className="w-4 h-4" />,
           onClick: () => {
             navigator.clipboard.writeText(formatAsText(messages))
-            message.success(t("more.copy.success")) 
+            message.success(t("more.copy.success"))
           }
         },
         {
-          key: "copy-markdown", 
-          label: t("more.copy.asMarkdown"), 
+          key: "copy-markdown",
+          label: t("more.copy.asMarkdown"),
           icon: <FileCode className="w-4 h-4" />,
           onClick: () => {
             navigator.clipboard.writeText(formatAsMarkdown(messages))
@@ -92,7 +117,7 @@ export const MoreOptions = ({
     },
     {
       type: "group",
-      label: t("more.download.group"), 
+      label: t("more.download.group"),
       children: [
         {
           key: "download-txt",
@@ -117,6 +142,22 @@ export const MoreOptions = ({
           onClick: () => {
             const jsonContent = JSON.stringify(messages, null, 2)
             downloadFile(jsonContent, "chat.json")
+          }
+        },
+        {
+          key: "download-image",
+          label: t("more.download.image"),
+          icon: <ImageIcon className="w-4 h-4" />,
+          onClick: async () => {
+            try {
+              const dataUrl = await generateChatImage(messages)
+              const link = document.createElement("a")
+              link.download = `chat_${new Date().toISOString()}.png`
+              link.href = dataUrl
+              link.click()
+            } catch (e) {
+              message.error("Failed to generate image")
+            }
           }
         }
       ]

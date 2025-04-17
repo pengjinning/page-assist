@@ -17,8 +17,11 @@ export type Message = {
   sources: any[]
   images?: string[]
   search?: WebSearch
+  reasoning_time_taken?: number
   id?: string
   messageType?: string
+  modelName?: string
+  modelImage?: string
 }
 
 export type ChatHistory = {
@@ -68,6 +71,9 @@ type State = {
 
   temporaryChat: boolean
   setTemporaryChat: (temporaryChat: boolean) => void
+
+  useOCR: boolean
+  setUseOCR: (useOCR: boolean) => void
 }
 
 export const useStoreMessageOption = create<State>((set) => ({
@@ -109,4 +115,7 @@ export const useStoreMessageOption = create<State>((set) => ({
 
   temporaryChat: false,
   setTemporaryChat: (temporaryChat) => set({ temporaryChat }),
+
+  useOCR: false,
+  setUseOCR: (useOCR) => set({ useOCR }),
 }))

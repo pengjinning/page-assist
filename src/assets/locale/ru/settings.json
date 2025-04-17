@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Возобновить последний чат при открытии боковой панели (Copilot)"
       },
+      "turnOnChatWithWebsite": {
+        "label": "Включить чат с веб-сайтом по умолчанию (Copilot)"
+      },
       "webUIResumeLastChat": {
         "label": "Возобновить последний чат при открытии веб-интерфейса"
       },
@@ -38,6 +41,18 @@
       },
       "ollamaStatus": {
         "label": "Включить или отключить проверку состояния подключения Ollama"
+      },
+      "wideMode": {
+        "label": "Включить широкоэкранный режим"
+      },
+      "openReasoning": {
+        "label": "Открыть рассуждения свернутыми по умолчанию"
+      },
+      "userChatBubble": {
+        "label": "Использовать пузырь чата для сообщений пользователя"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "Автоматически копировать ответ в буфер обмена"
       }
     },
     "sidepanelRag": {
@@ -75,6 +90,9 @@
       "braveApi": {
         "label": "API-ключ Brave",
         "placeholder": "Введите ваш API-ключ Brave"
+      },
+      "searchOnByDefault": {
+        "label": "Поиск в интернете включен по умолчанию"
       }
     },
     "system": {
@@ -111,6 +129,19 @@
       },
       "ssmlEnabled": {
         "label": "Включить SSML (язык разметки синтеза речи)"
+      },
+      "removeReasoningTagTTS": {
+        "label": "Удалить тег рассуждения из TTS"
+      }
+    },
+    "stt": {
+      "heading": "Настройки речь в текст",
+      "autoStopTimeout": {
+        "label": "Тайм-аут автоостановки (мс)",
+        "placeholder": "Введите тайм-аут автоостановки в миллисекундах"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "Автоматическая отправка голосового сообщения"
       }
     }
   },
@@ -260,7 +291,10 @@
         "label": "URL Ollama",
         "placeholder": "Введите URL Ollama"
       },
-
+      "globalEnable": {
+        "label": "Включить или отключить интеграцию Ollama глобально",
+        "warning": "При отключении глобальной интеграции Ollama, Page Assist не будет получать модели из Ollama. Вы все еще можете добавить экземпляр Ollama из раздела <anchor>API, совместимого с OpenAI</anchor>, который будет работать нормально."
+      },
       "advanced": {
         "label": "Расширенная конфигурация URL Ollama",
         "urlRewriteEnabled": {
@@ -269,6 +303,9 @@
         "rewriteUrl": {
           "label": "Пользовательский исходный URL",
           "placeholder": "Введите пользовательский исходный URL"
+        },
+        "autoCORSFix": {
+          "label": "Включить или отключить автоматическое исправление CORS для Ollama"
         },
         "headers": {
           "label": "Пользовательские Заголовки",
@@ -333,6 +370,14 @@
         "label": "Количество извлеченных документов",
         "placeholder": "Введите количество извлеченных документов",
         "required": "Пожалуйста, введите количество извлеченных документов"
+      },
+      "splittingSeparator": {
+        "label": "Разделитель",
+        "placeholder": "Введите разделитель (например, \\n\\n)",
+        "required": "Пожалуйста, введите разделитель"
+      },
+      "splittingStrategy": {
+        "label": "Разделитель текста"
       }
     },
     "prompt": {

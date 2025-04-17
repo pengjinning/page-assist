@@ -45,12 +45,13 @@ export default defineConfig({
       }
     }
   }),
-  entrypointsDir: "entries",
+  entrypointsDir:
+    process.env.TARGET === "firefox" ? "entries-firefox" : "entries",
   srcDir: "src",
   outDir: "build",
 
   manifest: {
-    version: "1.3.8",
+    version: "1.5.9",
     name:
       process.env.TARGET === "firefox"
         ? "Page Assist - A Web UI for Local AI Models"
@@ -81,10 +82,16 @@ export default defineConfig({
       execute_side_panel: {
         description: "Open the side panel",
         suggested_key: {
-          default: "Ctrl+Shift+P"
+          default: "Ctrl+Shift+Y"
         }
       }
     },
+    content_security_policy:
+      process.env.TARGET !== "firefox" ?
+        {
+          extension_pages:
+            "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+        } :  "script-src 'self' 'wasm-unsafe-eval' blob:; object-src 'self'; worker-src 'self' blob:;",
     permissions:
       process.env.TARGET === "firefox"
         ? firefoxMV2Permissions

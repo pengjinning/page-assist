@@ -24,7 +24,7 @@ const _getHtml = () => {
 
 export const getDataFromCurrentTab = async () => {
   const result = new Promise((resolve) => {
-    if (import.meta.env.BROWSER === "chrome") {
+    if (import.meta.env.BROWSER === "chrome" || import.meta.env.BROWSER === "edge") {
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         const tab = tabs[0]
 
@@ -52,7 +52,7 @@ export const getDataFromCurrentTab = async () => {
               resolve(data[0].result)
             }
           } catch (e) {
-            console.log("error", e)
+            console.error("error", e)
             // this is a weird method but it works
             if (import.meta.env.BROWSER === "firefox") {
               // all I need is to get the pdf url but somehow 

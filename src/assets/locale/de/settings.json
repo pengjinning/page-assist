@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Letzten Chat beim Öffnen des Seitenpanels fortsetzen (Copilot)"
       },
+      "turnOnChatWithWebsite": {
+        "label": "Chat mit Website standardmäßig aktivieren (Copilot)"
+      },
       "webUIResumeLastChat": {
         "label": "Letzten Chat beim Öffnen der Web-UI fortsetzen"
       },
@@ -38,6 +41,15 @@
       },
       "ollamaStatus": {
         "label": "Ollama-Verbindungsstatus-Überprüfung aktivieren oder deaktivieren"
+      },
+      "wideMode": {
+        "label": "Breitbildmodus aktivieren"
+      },
+      "openReasoning": {
+        "label": "Offene Argumentation standardmäßig eingeklappt"
+      },
+      "userChatBubble": {
+        "label": "Chat-Blase für Benutzernachrichten verwenden"
       }
     },
     "sidepanelRag": {
@@ -74,6 +86,9 @@
       "braveApi": {
         "label": "Brave API-Schlüssel",
         "placeholder": "Geben Sie Ihren Brave API-Schlüssel ein"
+      },
+      "searchOnByDefault": {
+        "label": "Internetsuche standardmäßig aktiviert"
       }
     },
     "system": {
@@ -110,6 +125,19 @@
       },
       "ssmlEnabled": {
         "label": "SSML (Speech Synthesis Markup Language) aktivieren"
+      },
+      "removeReasoningTagTTS": {
+        "label": "Reasoning-Tag aus Text-zu-Sprache entfernen"
+      }
+    },
+    "stt": {
+      "heading": "Sprache-zu-Text-Einstellungen",
+      "autoStopTimeout": {
+        "label": "Automatische Stopp-Zeitüberschreitung (ms)",
+        "placeholder": "Geben Sie die automatische Stopp-Zeitüberschreitung in Millisekunden ein"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "Sprachnachricht automatisch senden"
       }
     }
   },
@@ -259,6 +287,10 @@
         "label": "Ollama-URL",
         "placeholder": "Ollama-URL eingeben"
       },
+      "globalEnable": {
+        "label": "Ollama-Integration global aktivieren oder deaktivieren",
+        "warning": "Wenn Sie die Ollama-Integration global deaktivieren, wird Page Assist keine Modelle von Ollama abrufen. Sie können Ollama-Instanzen weiterhin über den Bereich <anchor>OpenAI-kompatible API</anchor> hinzufügen, was einwandfrei funktioniert."
+      },
       "advanced": {
         "label": "Erweiterte Ollama-URL-Konfiguration",
         "urlRewriteEnabled": {
@@ -267,6 +299,9 @@
         "rewriteUrl": {
           "label": "Benutzerdefinierte Ursprungs-URL",
           "placeholder": "Benutzerdefinierte Ursprungs-URL eingeben"
+        },
+        "autoCORSFix": {
+          "label": "Automatische Ollama-CORS-Korrektur aktivieren oder deaktivieren"
         },
         "headers": {
           "label": "Benutzerdefinierte Header",
@@ -331,6 +366,14 @@
         "label": "Anzahl der abgerufenen Dokumente",
         "placeholder": "Anzahl der abgerufenen Dokumente eingeben",
         "required": "Bitte geben Sie die Anzahl der abgerufenen Dokumente ein"
+      },
+      "splittingSeparator": {
+        "label": "Separator",
+        "placeholder": "Separator eingeben (z.B. \\n\\n)",
+        "required": "Bitte geben Sie einen Separator ein"
+      },
+      "splittingStrategy": {
+        "label": "Text-Splitter"
       }
     },
     "prompt": {

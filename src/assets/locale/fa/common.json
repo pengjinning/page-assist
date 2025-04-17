@@ -40,6 +40,7 @@
     "copyToClipboard": "کپی به کلیپ بورد",
     "webSearch": "جستجوی وب",
     "regenerate": "ایجاد مجدد",
+    "continue": "ادامه پاسخ",
     "edit": "ویرایش",
     "delete": "حذف",
     "saveAndSubmit": "ذخیره و ارسال",
@@ -67,8 +68,8 @@
                 "placeholder": "مقدار Temperature را وارد کنید (مثلا 0.7, 1.0)"
             },
             "numCtx": {
-                "label": "Number of Contexts",
-                "placeholder": "مقدار Number of Contexts را وارد کنید (پیش فرض: 2048)"
+                "label": "اندازه پنجره متن (num_ctx)",
+                "placeholder": "مقدار اندازه پنجره متن را وارد کنید (پیش فرض: 2048)"
             },
             "numPredict": {
                 "label": "حداکثر توکن‌ها (num_predict)",
@@ -110,5 +111,10 @@
     },
     "pin": "پین کردن",
     "unpin": "حذف پین",
-    "generationInfo": "اطلاعات تولید"
+    "generationInfo": "اطلاعات تولید",
+    "sidebarChat": "چت کناری",
+    "reasoning": {
+        "thinking": "در حال فکر کردن....",
+        "thought": "فکر کردن برای {{time}}"
+    }
 }

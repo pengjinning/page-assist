@@ -8,14 +8,15 @@ import {
   pinHistory,
   getPromptById
 } from "@/db"
-import { Empty, Skeleton, Dropdown, Menu } from "antd"
-import { useMessageOption } from "~/hooks/useMessageOption"
+import { Empty, Skeleton, Dropdown, Menu, Tooltip, Input } from "antd"
 import {
   PencilIcon,
   Trash2,
   MoreVertical,
   PinIcon,
-  PinOffIcon
+  PinOffIcon,
+  BotIcon,
+  SearchIcon
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -24,35 +25,52 @@ import {
   getLastUsedChatSystemPrompt,
   lastUsedChatModelEnabled
 } from "@/services/model-settings"
-import { useStoreChatModelSettings } from "@/store/model"
+import { useDebounce } from "@/hooks/useDebounce"
+import { useCallback, useState } from "react"
 
 type Props = {
   onClose: () => void
+  setMessages: (messages: any) => void
+  setHistory: (history: any) => void
+  setHistoryId: (historyId: string) => void
+  setSelectedModel: (model: string) => void
+  setSelectedSystemPrompt: (prompt: string) => void
+  setSystemPrompt: (prompt: string) => void
+  clearChat: () => void
+  temporaryChat: boolean
+  historyId: string
+  history: any
 }
 
-export const Sidebar = ({ onClose }: Props) => {
-  const {
-    setMessages,
-    setHistory,
-    setHistoryId,
-    historyId,
-    clearChat,
-    setSelectedModel,
-    temporaryChat,
-    setSelectedSystemPrompt
-  } = useMessageOption()
-
-  const { setSystemPrompt } = useStoreChatModelSettings()
-
+export const Sidebar = ({
+  onClose,
+  setMessages,
+  setHistory,
+  setHistoryId,
+  setSelectedModel,
+  setSelectedSystemPrompt,
+  clearChat,
+  historyId,
+  setSystemPrompt,
+  temporaryChat
+}: Props) => {
   const { t } = useTranslation(["option", "common"])
   const client = useQueryClient()
   const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState("")
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
   const { data: chatHistories, status } = useQuery({
-    queryKey: ["fetchChatHistory"],
+    queryKey: ["fetchChatHistory", debouncedSearchQuery],
     queryFn: async () => {
       const db = new PageAssitDatabase()
-      const history = await db.getChatHistories()
+      let history
+
+      if (debouncedSearchQuery) {
+        history = await db.searchChatHistories(debouncedSearchQuery)
+      } else {
+        history = await db.getChatHistories()
+      }
 
       const now = new Date()
       const today = new Date(now.setHours(0, 0, 0, 0))
@@ -93,7 +111,8 @@ export const Sidebar = ({ onClose }: Props) => {
       if (olderItems.length) groups.push({ label: "older", items: olderItems })
 
       return groups
-    }
+    },
+    placeholderData: (prev) => prev
   })
 
   const { mutate: deleteHistory } = useMutation({
@@ -132,10 +151,36 @@ export const Sidebar = ({ onClose }: Props) => {
       })
     }
   })
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
 
+  const clearSearch = () => {
+    setSearchQuery("")
+  }
   return (
     <div
       className={`overflow-y-auto z-99 ${temporaryChat ? "pointer-events-none opacity-50" : ""}`}>
+      <div className="sticky top-0 z-10 my-3">
+        <div className="relative">
+          <Input
+            placeholder={t("common:search")}
+            value={searchQuery}
+            onChange={handleSearchChange}
+            prefix={<SearchIcon className="w-4 h-4 text-gray-400" />}
+            suffix={
+              searchQuery ? (
+                <button
+                  onClick={clearSearch}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                  ✕
+                </button>
+              ) : null
+            }
+            className="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-[#232222]"
+          />
+        </div>
+      </div>
       {status === "success" && chatHistories.length === 0 && (
         <div className="flex justify-center items-center mt-20 overflow-hidden">
           <Empty description={t("common:noHistory")} />
@@ -162,7 +207,12 @@ export const Sidebar = ({ onClose }: Props) => {
                 {group.items.map((chat, index) => (
                   <div
                     key={index}
-                    className="flex py-2 px-2 items-start gap-3 relative rounded-md truncate hover:pr-4 group transition-opacity duration-300 ease-in-out bg-gray-100 dark:bg-[#232222] dark:text-gray-100 text-gray-800 border hover:bg-gray-200 dark:hover:bg-[#2d2d2d] dark:border-gray-800">
+                    className="flex py-2 px-2 items-center gap-3 relative rounded-md truncate hover:pr-4 group transition-opacity duration-300 ease-in-out bg-gray-100 dark:bg-[#232222] dark:text-gray-100 text-gray-800 border hover:bg-gray-200 dark:hover:bg-[#2d2d2d] dark:border-gray-800">
+                    {chat?.message_source === "copilot" && (
+                      <Tooltip title={t("common:sidebarChat")} placement="top">
+                        <BotIcon className="size-3 text-green-500" />
+                      </Tooltip>
+                    )}
                     <button
                       className="flex-1 overflow-hidden break-all text-start truncate w-full"
                       onClick={async () => {

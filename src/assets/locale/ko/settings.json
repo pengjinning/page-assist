@@ -24,6 +24,9 @@
       "copilotResumeLastChat": {
         "label": "사이드 패널을 열 때 마지막 채팅 재개 (Copilot)"
       },
+      "turnOnChatWithWebsite": {
+        "label": "웹사이트와의 채팅 기본 활성화 (Copilot)"
+      },
       "webUIResumeLastChat": {
         "label": "웹 UI를 열 때 마지막 채팅 재개"
       },
@@ -41,6 +44,18 @@
       },
       "ollamaStatus": {
         "label": "Ollama 연결 상태 확인 활성화 또는 비활성화"
+      },
+      "wideMode": {
+        "label": "와이드 스크린 모드 활성화"
+      },
+      "openReasoning": {
+        "label": "추론 섹션을 기본적으로 열기"
+      },
+      "userChatBubble": {
+        "label": "사용자 메시지에 채팅 버블 사용"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "응답 자동 클립보드 복사"
       }
     },
     "sidepanelRag": {
@@ -77,6 +92,9 @@
       "braveApi": {
         "label": "Brave API 키",
         "placeholder": "Brave API 키를 입력하세요"
+      },
+      "searchOnByDefault": {
+        "label": "기본적으로 인터넷 검색 켜기"
       }
     },
     "system": {
@@ -113,6 +131,19 @@
       },
       "ssmlEnabled": {
         "label": "SSML (Speech Synthesis Markup Language) 활성화"
+      },
+      "removeReasoningTagTTS": {
+        "label": "TTS에서 추론 태그 제거"
+      }
+    },
+    "stt": {
+      "heading": "음성 인식 설정",
+      "autoStopTimeout": {
+        "label": "자동 중지 시간 (ms)",
+        "placeholder": "자동 중지 시간을 밀리초 단위로 입력하세요"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "음성 메시지 자동 전송"
       }
     }
   },
@@ -262,6 +293,10 @@
         "label": "Ollama URL",
         "placeholder": "Ollama URL 입력"
       },
+      "globalEnable": {
+        "label": "Ollama 통합 기능 전역 활성화 또는 비활성화",
+        "warning": "Ollama 통합을 전역적으로 비활성화하면 Page Assist가 Ollama에서 모델을 가져오지 않습니다. <anchor>OpenAI 호환 API</anchor> 섹션에서 Ollama 인스턴스를 추가할 수 있으며 정상적으로 작동합니다."
+      },
       "advanced": {
         "label": "Ollama URL 고급 설정",
         "urlRewriteEnabled": {
@@ -270,6 +305,9 @@
         "rewriteUrl": {
           "label": "사용자 지정 Origin URL",
           "placeholder": "사용자 지정 Origin URL 입력"
+        },
+        "autoCORSFix": {
+          "label": "자동 Ollama CORS 수정 활성화 또는 비활성화"
         },
         "headers": {
           "label": "사용자 지정 헤더",
@@ -334,6 +372,14 @@
         "label": "검색 문서 수",
         "placeholder": "검색 문서 수 입력",
         "required": "검색 문서 수를 입력해주세요"
+      },
+      "splittingSeparator": {
+        "label": "구분자",
+        "placeholder": "구분자 입력 (예: \\n\\n)",
+        "required": "구분자를 입력해주세요"
+      },
+      "splittingStrategy": {
+        "label": "텍스트 분할기"
       }
     },
     "prompt": {

@@ -2,26 +2,25 @@ import { useStorage } from "@plasmohq/storage/hook"
 import {
   BrainCog,
   ChevronLeft,
+  ChevronRight,
   CogIcon,
   ComputerIcon,
   GithubIcon,
   PanelLeftIcon,
-  SquarePen,
   ZapIcon
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useLocation, NavLink } from "react-router-dom"
-import { SelectedKnowledge } from "../Option/Knowledge/SelectedKnwledge"
+import { SelectedKnowledge } from "../Option/Knowledge/SelectedKnowledge"
 import { ModelSelect } from "../Common/ModelSelect"
 import { PromptSelect } from "../Common/PromptSelect"
 import { useQuery } from "@tanstack/react-query"
 import { fetchChatModels } from "~/services/ollama"
 import { useMessageOption } from "~/hooks/useMessageOption"
-import { Select, Tooltip } from "antd"
+import { Avatar, Select, Tooltip } from "antd"
 import { getAllPrompts } from "@/db"
 import { ProviderIcons } from "../Common/ProviderIcon"
 import { NewChat } from "./NewChat"
-import { PageAssistSelect } from "../Select"
 import { MoreOptions } from "./MoreOptions"
 type Props = {
   setSidebarOpen: (open: boolean) => void
@@ -32,7 +31,9 @@ export const Header: React.FC<Props> = ({
   setOpenModelSettings,
   setSidebarOpen
 }) => {
-  const { t } = useTranslation(["option", "common"])
+  const { t, i18n } = useTranslation(["option", "common"])
+  const isRTL = i18n?.dir() === "rtl"
+
   const [shareModeEnabled] = useStorage("shareMode", false)
   const [hideCurrentChatModelSettings] = useStorage(
     "hideCurrentChatModelSettings",
@@ -58,7 +59,6 @@ export const Header: React.FC<Props> = ({
     queryKey: ["fetchModel"],
     queryFn: () => fetchChatModels({ returnEmpty: true }),
     refetchIntervalInBackground: false,
-    placeholderData: (prev) => prev
   })
 
   const { data: prompts, isLoading: isPromptLoading } = useQuery({
@@ -89,7 +89,7 @@ export const Header: React.FC<Props> = ({
 
   return (
     <div
-      className={`sticky top-0 z-[999] flex h-16 p-3  bg-gray-50 border-b  dark:bg-[#171717] dark:border-gray-600 ${
+      className={`absolute top-0 z-10 flex h-14 w-full flex-row items-center justify-center p-3 overflow-x-auto lg:overflow-x-visible bg-gray-50 border-b  dark:bg-[#171717] dark:border-gray-600 ${
         temporaryChat && "!bg-gray-200 dark:!bg-black"
       }`}>
       <div className="flex gap-2 items-center">
@@ -98,7 +98,11 @@ export const Header: React.FC<Props> = ({
             <NavLink
               to="/"
               className="text-gray-500 items-center dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-              <ChevronLeft className="w-8 h-8" />
+              {isRTL ? (
+                <ChevronRight className={`w-8 h-8`} />
+              ) : (
+                <ChevronLeft className={`w-8 h-8`} />
+              )}
             </NavLink>
           </div>
         )}
@@ -114,33 +118,50 @@ export const Header: React.FC<Props> = ({
           {"/"}
         </span>
         <div className="hidden lg:block">
-          <PageAssistSelect
-            className="w-80"
+          <Select
+            className="min-w-80"
             placeholder={t("common:selectAModel")}
-            loadingText={t("common:selectAModel")}
+            // loadingText={t("common:selectAModel")}
             value={selectedModel}
             onChange={(e) => {
-              setSelectedModel(e.value)
-              localStorage.setItem("selectedModel", e.value)
+              setSelectedModel(e)
+              localStorage.setItem("selectedModel", e)
             }}
-            isLoading={isModelsLoading}
+            filterOption={(input, option) => {
+              //@ts-ignore
+              return (
+                option?.label?.props["data-title"]
+                  ?.toLowerCase()
+                  ?.indexOf(input.toLowerCase()) >= 0
+              )
+            }}
+            showSearch
+            loading={isModelsLoading}
             options={models?.map((model) => ({
               label: (
                 <span
                   key={model.model}
+                  data-title={model.name}
                   className="flex flex-row gap-3 items-center ">
-                  <ProviderIcons
-                    provider={model?.provider}
-                    className="w-5 h-5"
-                  />
-                  <span className="line-clamp-2">{model.name}</span>
+                  {model?.avatar ? (
+                    <Avatar src={model.avatar} alt={model.name} size="small" />
+                  ) : (
+                    <ProviderIcons
+                      provider={model?.provider}
+                      className="w-5 h-5"
+                    />
+                  )}
+                  <span className="line-clamp-2">
+                    {model?.nickname || model.model}
+                  </span>
                 </span>
               ),
               value: model.model
             }))}
-            onRefresh={() => {
-              refetch()
-            }}
+            size="large"
+            // onRefresh={() => {
+            //   refetch()
+            // }}
           />
         </div>
         <div className="lg:hidden">
@@ -192,12 +213,6 @@ export const Header: React.FC<Props> = ({
       <div className="flex flex-1 justify-end px-4">
         <div className="ml-4 flex items-center md:ml-6">
           <div className="flex gap-4 items-center">
-            {/* {pathname === "/" &&
-              messages.length > 0 &&
-              !streaming &&
-              shareModeEnabled && (
-                <ShareBtn historyId={historyId} messages={messages} />
-              )} */}
             {messages.length > 0 && !streaming && (
               <MoreOptions
                 shareModeEnabled={shareModeEnabled}

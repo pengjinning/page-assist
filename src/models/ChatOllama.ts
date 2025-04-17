@@ -37,7 +37,9 @@ export class ChatOllama
 
     baseUrl = "http://localhost:11434";
 
-    keepAlive = "5m";
+    // keepAlive = "5m";
+
+    keepAlive?: string;
 
     embeddingOnly?: boolean;
 
@@ -95,11 +97,15 @@ export class ChatOllama
 
     topP?: number;
 
+    minP?: number;
+
     typicalP?: number;
 
     useMLock?: boolean;
 
     useMMap?: boolean;
+
+    useMlock?: boolean;
 
     vocabOnly?: boolean;
 
@@ -113,7 +119,7 @@ export class ChatOllama
         this.baseUrl = fields.baseUrl?.endsWith("/")
             ? fields.baseUrl.slice(0, -1)
             : fields.baseUrl ?? this.baseUrl;
-        this.keepAlive = parseKeepAlive(fields.keepAlive) ?? this.keepAlive;
+        this.keepAlive = parseKeepAlive(fields.keepAlive);
         this.embeddingOnly = fields.embeddingOnly;
         this.f16KV = fields.f16KV;
         this.frequencyPenalty = fields.frequencyPenalty;
@@ -142,9 +148,11 @@ export class ChatOllama
         this.tfsZ = fields.tfsZ;
         this.topK = fields.topK;
         this.topP = fields.topP;
+        this.minP = fields.minP;
         this.typicalP = fields.typicalP;
         this.useMLock = fields.useMLock;
         this.useMMap = fields.useMMap;
+        this.useMlock = fields.useMlock;
         this.vocabOnly = fields.vocabOnly;
         this.format = fields.format;
         this.seed = fields.seed;
@@ -205,8 +213,9 @@ export class ChatOllama
                 tfs_z: this.tfsZ,
                 top_k: this.topK,
                 top_p: this.topP,
+                min_p: this.minP,
                 typical_p: this.typicalP,
-                use_mlock: this.useMLock,
+                use_mlock: this.useMlock,
                 use_mmap: this.useMMap,
                 vocab_only: this.vocabOnly,
                 seed: this.seed,

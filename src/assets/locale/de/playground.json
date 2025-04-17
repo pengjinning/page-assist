@@ -23,8 +23,10 @@
         "speechToText": "Sprache zu Text",
         "uploadImage": "Bild hochladen",
         "stopStreaming": "Streaming stoppen",
-        "knowledge": "Wissen"
+        "knowledge": "Wissen",
+        "clearContext": "Kontext löschen"
     },
     "sendWhenEnter": "Senden bei Drücken der Eingabetaste",
-    "welcome": "Hallo! Wie kann ich Ihnen heute helfen?"
+    "welcome": "Hallo! Wie kann ich Ihnen heute helfen?",
+    "useOCR": "Text aus Bild extrahieren (OCR)"
 }

@@ -4,8 +4,10 @@ import { Form } from "antd"
 import React from "react"
 import {
   customOllamaHeaders,
+  getIsAutoCORSFix,
   getRewriteUrl,
   isUrlRewriteEnabled,
+  setAutoCORSFix,
   setCustomOllamaHeaders,
   setRewriteUrl,
   setUrlRewriteEnabled
@@ -16,21 +18,31 @@ import { SaveButton } from "../SaveButton"
 export const AdvanceOllamaSettings = () => {
   const [form] = Form.useForm()
   const watchUrlRewriteEnabled = Form.useWatch("urlRewriteEnabled", form)
+  const { t } = useTranslation("settings")
 
   const fetchAdvancedData = async () => {
-    const [urlRewriteEnabled, rewriteUrl, headers] = await Promise.all([
-      isUrlRewriteEnabled(),
-      getRewriteUrl(),
-      customOllamaHeaders()
-    ])
-    form.setFieldsValue({ urlRewriteEnabled, rewriteUrl, headers })
+    try {
+      const [urlRewriteEnabled, rewriteUrl, headers, autoCORSFix] =
+        await Promise.all([
+          isUrlRewriteEnabled(),
+          getRewriteUrl(),
+          customOllamaHeaders(),
+          getIsAutoCORSFix()
+        ])
+      form.setFieldsValue({
+        urlRewriteEnabled,
+        rewriteUrl,
+        headers,
+        autoCORSFix
+      })
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   React.useEffect(() => {
     fetchAdvancedData()
   }, [])
-
-  const { t } = useTranslation("settings")
 
   return (
     <Form
@@ -41,6 +53,7 @@ export const AdvanceOllamaSettings = () => {
         setUrlRewriteEnabled(e.urlRewriteEnabled)
         setRewriteUrl(e.rewriteUrl)
         setCustomOllamaHeaders(headers)
+        setAutoCORSFix(e.autoCORSFix)
       }}
       form={form}
       layout="vertical"
@@ -63,6 +76,12 @@ export const AdvanceOllamaSettings = () => {
         />
       </Form.Item>
 
+      <Form.Item
+        name="autoCORSFix"
+        label={t("ollamaSettings.settings.advanced.autoCORSFix.label")}>
+        <Switch />
+      </Form.Item>
+
       <Form.List name="headers">
         {(fields, { add, remove }) => (
           <div className="flex flex-col ">
@@ -81,7 +100,7 @@ export const AdvanceOllamaSettings = () => {
             </div>
             {fields.map((field, index) => (
               <div key={field.key} className="flex items-center   w-full">
-                <div className="flex-grow flex space-x-4">
+                <div className="flex-grow flex mt-3 space-x-4">
                   <Form.Item
                     label={t(
                       "ollamaSettings.settings.advanced.headers.key.label"

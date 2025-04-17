@@ -23,8 +23,10 @@
         "speechToText": "گفتار به متن",
         "uploadImage": "آپلود تصویر",
         "stopStreaming": "توقف Streaming",
-        "knowledge": "دانش"
+        "knowledge": "دانش",
+        "clearContext": "پاک کردن متن"
     },
     "sendWhenEnter": "با فشار دادن Enter ارسال شود",
-    "welcome": "سلام! امروز چطور می‌توانم به شما کمک کنم؟"
+    "welcome": "سلام! امروز چطور می‌توانم به شما کمک کنم؟",
+    "useOCR": "استخراج متن از تصویر (OCR)"
 }

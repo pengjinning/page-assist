@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "آخرین گفتگو را هنگام باز کردن SidePanel (Copilot) از سر بگیر"
       },
+      "turnOnChatWithWebsite": {
+        "label": "فعال کردن گپ با وب سایت به صورت پیش‌فرض (کوپایلوت)"
+      },
       "hideCurrentChatModelSettings": {
         "label": "مخفی کردن تنظیمات مدل گپ فعلی را"
       },
@@ -35,6 +38,18 @@
       },
       "ollamaStatus": {
         "label": "فعال یا غیرفعال کردن بررسی وضعیت اتصال Ollama"
+      },
+      "wideMode": {
+        "label": "فعال کردن حالت صفحه عریض"
+      },
+      "openReasoning": {
+        "label": "باز کردن استدلال به صورت پیش فرض"
+      },
+      "userChatBubble": {
+        "label": "استفاده از حباب گفتگو برای پیام‌های کاربر"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "کپی خودکار پاسخ در کلیپ بورد"
       }
     },
     "sidepanelRag": {
@@ -71,6 +86,9 @@
       "braveApi": {
         "label": "کلید API بریو",
         "placeholder": "کلید API بریو خود را وارد کنید"
+      },
+      "searchOnByDefault": {
+        "label": "جستجوی اینترنتی به صورت پیش‌فرض فعال باشد"
       }
     },
     "system": {
@@ -107,6 +125,19 @@
       },
       "ssmlEnabled": {
         "label": "فعال کردن SSML (Speech Synthesis Markup Language)"
+      },
+      "removeReasoningTagTTS": {
+        "label": "حذف برچسب استدلال از تبدیل متن به گفتار"
+      }
+    },
+    "stt": {
+      "heading": "تنظیمات تبدیل گفتار به متن",
+      "autoStopTimeout": {
+        "label": "زمان توقف خودکار (میلی‌ثانیه)",
+        "placeholder": "زمان توقف خودکار را به میلی‌ثانیه وارد کنید"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "ارسال خودکار پیام صوتی"
       }
     }
   },
@@ -255,6 +286,10 @@
         "label": "آدرس Ollama",
         "placeholder": "URL Ollama را وارد کنید"
       },
+      "globalEnable": {
+        "label": "فعال یا غیرفعال کردن یکپارچه سازی Ollama به صورت سراسری",
+        "warning": "با غیرفعال کردن یکپارچه سازی Ollama به صورت سراسری، Page Assist مدل ها را از Ollama دریافت نخواهد کرد. شما همچنان می توانید نمونه Ollama را از بخش <anchor>API سازگار با OpenAI</anchor> اضافه کنید که به درستی کار خواهد کرد."
+      },
       "advanced": {
         "label": "پیکربندی پیشرفته URL Ollama",
         "urlRewriteEnabled": {
@@ -263,6 +298,9 @@
         "rewriteUrl": {
           "label": "URL مبدا سفارشی",
           "placeholder": "URL مبدا سفارشی را وارد کنید"
+        },
+        "autoCORSFix": {
+          "label": "فعال یا غیرفعال کردن رفع خودکار CORS در Ollama"
         },
         "headers": {
           "label": "هدرهای سفارشی",
@@ -327,6 +365,14 @@
         "label": "تعداد اسناد بازیابی شده",
         "placeholder": "تعداد اسناد بازیابی شده را وارد کنید",
         "required": "لطفاً تعداد اسناد بازیابی شده را وارد کنید"
+      },
+      "splittingSeparator": {
+        "label": "جداکننده",
+        "placeholder": "جداکننده را وارد کنید (مثلاً \\n\\n)",
+        "required": "لطفاً یک جداکننده وارد کنید"
+      },
+      "splittingStrategy": {
+        "label": "تقسیم‌کننده متن"
       }
     },
     "prompt": {

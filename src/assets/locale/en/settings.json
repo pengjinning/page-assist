@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Resume the last chat when opening the SidePanel (Copilot)"
       },
+      "turnOnChatWithWebsite": {
+        "label": "Enable Chat with Website by default (Copilot)"
+      },
       "webUIResumeLastChat": {
         "label": "Resume the last chat when opening the Web UI"
       },
@@ -38,6 +41,18 @@
       },
       "ollamaStatus": {
         "label": "Enable or disable Ollama connection status check"
+      },
+      "wideMode": {
+        "label": "Enable wide screen mode"
+      },
+      "openReasoning": {
+        "label": "Open Reasoning Collapse by default"
+      },
+      "userChatBubble": {
+        "label": "Use Chat Bubble for User Messages"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "Automatically Copy Response to Clipboard"
       }
     },
     "sidepanelRag": {
@@ -72,8 +87,22 @@
         }
       },
       "braveApi": {
-        "label":  "Brave API Key",
+        "label": "Brave API Key",
         "placeholder": "Enter your Brave API key"
+      },
+      "tavilyApi": {
+        "label": "Tavily API Key ",
+        "placeholder": "Enter your Tavily API key"
+      },
+      "exa": {
+        "label": "Exa API Key",
+        "placeholder": "Enter your Exa API key"
+      },
+      "googleDomain": {
+        "label": "Google Domain"
+      },
+      "searchOnByDefault": {
+        "label": "Internet Search ON by default"
       }
     },
     "system": {
@@ -93,6 +122,15 @@
         "button": "Import Data",
         "success": "Import Success",
         "error": "Import Error"
+      },
+      "actionIcon": {
+        "label": "Set Default Action for Extension Icon Clicks"
+      },
+      "contextMenu": {
+        "label": "Set Default action for Context Menu"
+      },
+      "fontSize": {
+        "label": "Font Size"
       }
     },
     "tts": {
@@ -110,6 +148,22 @@
       },
       "ssmlEnabled": {
         "label": "Enable SSML (Speech Synthesis Markup Language)"
+      },
+      "responseSplitting": {
+        "label": "Response Splitting"
+      },
+      "removeReasoningTagTTS": {
+        "label": "Remove Reasoning Tag from TTS"
+      }
+    },
+    "stt": {
+      "heading": "Speech-to-Text Settings",
+      "autoStopTimeout": {
+        "label": "Auto Stop Timeout (ms)",
+        "placeholder": "Enter auto-stop timeout in milliseconds"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "Auto Submit Voice Message"
       }
     }
   },
@@ -119,6 +173,7 @@
     "columns": {
       "name": "Name",
       "digest": "Digest",
+      "nickname": "Nickname",
       "modifiedAt": "Modified At",
       "size": "Size",
       "actions": "Actions"
@@ -132,7 +187,8 @@
     },
     "tooltip": {
       "delete": "Delete Model",
-      "repull": "Re-Pull Model"
+      "repull": "Re-Pull Model",
+      "editNickname": "Edit Nickname"
     },
     "confirm": {
       "delete": "Are you sure you want to delete this model?",
@@ -259,6 +315,10 @@
         "label": "Ollama URL",
         "placeholder": "Enter Ollama URL"
       },
+      "globalEnable": {
+        "label": "Enable or Disable Ollama Integration Globally",
+        "warning": "By disabling Ollama integration globally, Page Assist won't fetch models from Ollama. You can still add Ollama instance from the <anchor>OpenAI compatible API</anchor> section which will work fine."
+      },
       "advanced": {
         "label": "Advance Ollama URL Configuration",
         "urlRewriteEnabled": {
@@ -267,6 +327,9 @@
         "rewriteUrl": {
           "label": "Custom Origin URL",
           "placeholder": "Enter Custom Origin URL"
+        },
+        "autoCORSFix": {
+          "label": "Enable or Disable Automatic Ollama CORS Fix"
         },
         "headers": {
           "label": "Custom Headers",
@@ -331,6 +394,14 @@
         "label": "Number of Retrieved Documents",
         "placeholder": "Enter Number of Retrieved Documents",
         "required": "Please enter the number of retrieved documents"
+      },
+      "splittingSeparator": {
+        "label": "Separator",
+        "placeholder": "Enter Separator (e.g., \\n\\n)",
+        "required": "Please enter a separator"
+      },
+      "splittingStrategy": {
+        "label": "Text Splitter"
       }
     },
     "prompt": {
@@ -352,5 +423,6 @@
   },
   "chromeAiSettings": {
     "title": "Chrome AI Settings"
-  }
+  },
+  "mermaid": "Mermaid"
 }

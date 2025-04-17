@@ -3,19 +3,18 @@ import { urlRewriteRuntime } from "@/libs/runtime"
 import { PageAssistHtmlLoader } from "@/loader/html"
 import { pageAssistEmbeddingModel } from "@/models/embedding"
 import {
-    defaultEmbeddingChunkOverlap,
-    defaultEmbeddingChunkSize,
     defaultEmbeddingModelForRag,
-    getOllamaURL
+    getOllamaURL,
+    getSelectedModel
 } from "@/services/ollama"
 import {
     getIsSimpleInternetSearch,
     totalSearchResults
 } from "@/services/search"
+import { getPageAssistTextSplitter } from "@/utils/text-splitter"
 
 import type { Document } from "@langchain/core/documents"
 import * as cheerio from "cheerio"
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter"
 import { MemoryVectorStore } from "langchain/vectorstores/memory"
 
 export const localBraveSearch = async (query: string) => {
@@ -44,7 +43,6 @@ export const localBraveSearch = async (query: string) => {
         return { title, link, content }
     }).filter((result) => result.link && result.title && result.content)
 
-    console.log(searchResults)
 
     return searchResults
 }
@@ -80,19 +78,16 @@ export const webBraveSearch = async (query: string) => {
         })
     }
     const ollamaUrl = await getOllamaURL()
+    const selectedModel = await getSelectedModel()
 
     const embeddingModle = await defaultEmbeddingModelForRag()
     const ollamaEmbedding = await pageAssistEmbeddingModel({
-        model: embeddingModle || "",
+        model: embeddingModle || selectedModel || "",
         baseUrl: cleanUrl(ollamaUrl)
     })
 
-    const chunkSize = await defaultEmbeddingChunkSize()
-    const chunkOverlap = await defaultEmbeddingChunkOverlap()
-    const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize,
-        chunkOverlap
-    })
+
+    const textSplitter = await getPageAssistTextSplitter();
 
     const chunks = await textSplitter.splitDocuments(docs)
 

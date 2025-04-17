@@ -11,7 +11,6 @@ import { useStoreMessageOption, type Message } from "~/store/option"
 import { useStoreMessage } from "~/store"
 import { SystemMessage } from "@langchain/core/messages"
 import { getDataFromCurrentTab } from "~/libs/get-html"
-import { MemoryVectorStore } from "langchain/vectorstores/memory"
 import { memoryEmbedding } from "@/utils/memory-embeddings"
 import { ChatHistory } from "@/store/option"
 import {
@@ -29,14 +28,21 @@ import { formatDocs } from "@/chain/chat-with-x"
 import { useStorage } from "@plasmohq/storage/hook"
 import { useStoreChatModelSettings } from "@/store/model"
 import { getAllDefaultModelSettings } from "@/services/model-settings"
-import { getSystemPromptForWeb } from "@/web/web"
+import { getSystemPromptForWeb, isQueryHaveWebsite } from "@/web/web"
 import { pageAssistModel } from "@/models"
 import { getPrompt } from "@/services/application"
 import { humanMessageFormatter } from "@/utils/human-message"
 import { pageAssistEmbeddingModel } from "@/models/embedding"
-import { PageAssistVectorStore } from "@/libs/PageAssistVectorStore"
 import { PAMemoryVectorStore } from "@/libs/PAMemoryVectorStore"
 import { getScreenshotFromCurrentTab } from "@/libs/get-screenshot"
+import {
+  isReasoningEnded,
+  isReasoningStarted,
+  mergeReasoningContent,
+  removeReasoning
+} from "@/libs/reasoning"
+import { getModelNicknameByID } from "@/db/nickname"
+import { systemPromptFormatter } from "@/utils/system-message"
 
 export const useMessage = () => {
   const {
@@ -56,6 +62,9 @@ export const useMessage = () => {
     setWebSearch,
     isSearchingInternet
   } = useStoreMessageOption()
+  const [defaultInternetSearchOn] = useStorage("defaultInternetSearchOn", false)
+
+  const [defaultChatWithWebsite] = useStorage("defaultChatWithWebsite", false)
 
   const [chatWithWebsiteEmbedding] = useStorage(
     "chatWithWebsiteEmbedding",
@@ -84,7 +93,9 @@ export const useMessage = () => {
     selectedQuickPrompt,
     setSelectedQuickPrompt,
     selectedSystemPrompt,
-    setSelectedSystemPrompt
+    setSelectedSystemPrompt,
+    useOCR,
+    setUseOCR
   } = useStoreMessage()
 
   const [speechToTextLanguage, setSpeechToTextLanguage] = useStorage(
@@ -106,6 +117,12 @@ export const useMessage = () => {
     setIsProcessing(false)
     setStreaming(false)
     currentChatModelSettings.reset()
+    if (defaultInternetSearchOn) {
+      setWebSearch(true)
+    }
+    if (defaultChatWithWebsite) {
+      setChatMode("rag")
+    }
   }
 
   const chatWithWebsiteMode = async (
@@ -141,11 +158,27 @@ export const useMessage = () => {
         currentChatModelSettings?.numPredict ??
         userDefaultModelSettings?.numPredict,
       useMMap:
-        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap
+        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap,
+      minP: currentChatModelSettings?.minP ?? userDefaultModelSettings?.minP,
+      repeatLastN:
+        currentChatModelSettings?.repeatLastN ??
+        userDefaultModelSettings?.repeatLastN,
+      repeatPenalty:
+        currentChatModelSettings?.repeatPenalty ??
+        userDefaultModelSettings?.repeatPenalty,
+      tfsZ: currentChatModelSettings?.tfsZ ?? userDefaultModelSettings?.tfsZ,
+      numKeep:
+        currentChatModelSettings?.numKeep ?? userDefaultModelSettings?.numKeep,
+      numThread:
+        currentChatModelSettings?.numThread ??
+        userDefaultModelSettings?.numThread,
+      useMlock:
+        currentChatModelSettings?.useMlock ?? userDefaultModelSettings?.useMlock
     })
 
     let newMessage: Message[] = []
     let generateMessageId = generateID()
+    const modelInfo = await getModelNicknameByID(selectedModel)
 
     if (!isRegenerate) {
       newMessage = [
@@ -162,7 +195,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     } else {
@@ -173,10 +208,13 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     }
+
     setMessages(newMessage)
     let fullText = ""
     let contentToSave = ""
@@ -276,10 +314,30 @@ export const useMessage = () => {
             userDefaultModelSettings?.numPredict,
           useMMap:
             currentChatModelSettings?.useMMap ??
-            userDefaultModelSettings?.useMMap
+            userDefaultModelSettings?.useMMap,
+          minP:
+            currentChatModelSettings?.minP ?? userDefaultModelSettings?.minP,
+          repeatLastN:
+            currentChatModelSettings?.repeatLastN ??
+            userDefaultModelSettings?.repeatLastN,
+          repeatPenalty:
+            currentChatModelSettings?.repeatPenalty ??
+            userDefaultModelSettings?.repeatPenalty,
+          tfsZ:
+            currentChatModelSettings?.tfsZ ?? userDefaultModelSettings?.tfsZ,
+          numKeep:
+            currentChatModelSettings?.numKeep ??
+            userDefaultModelSettings?.numKeep,
+          numThread:
+            currentChatModelSettings?.numThread ??
+            userDefaultModelSettings?.numThread,
+          useMlock:
+            currentChatModelSettings?.useMlock ??
+            userDefaultModelSettings?.useMlock
         })
         const response = await questionOllama.invoke(promptForQuestion)
         query = response.content.toString()
+        query = removeReasoning(query)
       }
 
       let context: string = ""
@@ -329,7 +387,7 @@ export const useMessage = () => {
         ]
       }
 
-      let humanMessage = humanMessageFormatter({
+      let humanMessage = await humanMessageFormatter({
         content: [
           {
             text: systemPrompt
@@ -338,7 +396,8 @@ export const useMessage = () => {
             type: "text"
           }
         ],
-        model: selectedModel
+        model: selectedModel,
+        useOCR
       })
 
       const applicationChatHistory = generateHistory(history, selectedModel)
@@ -355,7 +414,7 @@ export const useMessage = () => {
                 try {
                   generationInfo = output?.generations?.[0][0]?.generationInfo
                 } catch (e) {
-                  console.log("handleLLMEnd error", e)
+                  console.error("handleLLMEnd error", e)
                 }
               }
             }
@@ -363,18 +422,53 @@ export const useMessage = () => {
         }
       )
       let count = 0
+      let reasoningStartTime: Date | null = null
+      let reasoningEndTime: Date | null = null
+      let timetaken = 0
+      let apiReasoning = false
       for await (const chunk of chunks) {
+        if (chunk?.additional_kwargs?.reasoning_content) {
+          const reasoningContent = mergeReasoningContent(
+            fullText,
+            chunk?.additional_kwargs?.reasoning_content || ""
+          )
+          contentToSave = reasoningContent
+          fullText = reasoningContent
+          apiReasoning = true
+        } else {
+          if (apiReasoning) {
+            fullText += "</think>"
+            contentToSave += "</think>"
+            apiReasoning = false
+          }
+        }
+
         contentToSave += chunk?.content
         fullText += chunk?.content
         if (count === 0) {
           setIsProcessing(true)
+        }
+        if (isReasoningStarted(fullText) && !reasoningStartTime) {
+          reasoningStartTime = new Date()
+        }
+
+        if (
+          reasoningStartTime &&
+          !reasoningEndTime &&
+          isReasoningEnded(fullText)
+        ) {
+          reasoningEndTime = new Date()
+          const reasoningTime =
+            reasoningEndTime.getTime() - reasoningStartTime.getTime()
+          timetaken = reasoningTime
         }
         setMessages((prev) => {
           return prev.map((message) => {
             if (message.id === generateMessageId) {
               return {
                 ...message,
-                message: fullText + "▋"
+                message: fullText + "▋",
+                reasoning_time_taken: timetaken
               }
             }
             return message
@@ -390,7 +484,8 @@ export const useMessage = () => {
               ...message,
               message: fullText,
               sources: source,
-              generationInfo
+              generationInfo,
+              reasoning_time_taken: timetaken
             }
           }
           return message
@@ -420,7 +515,8 @@ export const useMessage = () => {
         fullText,
         source,
         message_source: "copilot",
-        generationInfo
+        generationInfo,
+        reasoning_time_taken: timetaken
       })
 
       setIsProcessing(false)
@@ -489,11 +585,27 @@ export const useMessage = () => {
         currentChatModelSettings?.numPredict ??
         userDefaultModelSettings?.numPredict,
       useMMap:
-        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap
+        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap,
+      minP: currentChatModelSettings?.minP ?? userDefaultModelSettings?.minP,
+      repeatLastN:
+        currentChatModelSettings?.repeatLastN ??
+        userDefaultModelSettings?.repeatLastN,
+      repeatPenalty:
+        currentChatModelSettings?.repeatPenalty ??
+        userDefaultModelSettings?.repeatPenalty,
+      tfsZ: currentChatModelSettings?.tfsZ ?? userDefaultModelSettings?.tfsZ,
+      numKeep:
+        currentChatModelSettings?.numKeep ?? userDefaultModelSettings?.numKeep,
+      numThread:
+        currentChatModelSettings?.numThread ??
+        userDefaultModelSettings?.numThread,
+      useMlock:
+        currentChatModelSettings?.useMlock ?? userDefaultModelSettings?.useMlock
     })
 
     let newMessage: Message[] = []
     let generateMessageId = generateID()
+    const modelInfo = await getModelNicknameByID(selectedModel)
 
     if (!isRegenerate) {
       newMessage = [
@@ -510,7 +622,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     } else {
@@ -521,7 +635,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     }
@@ -536,11 +652,7 @@ export const useMessage = () => {
       const applicationChatHistory = []
 
       const data = await getScreenshotFromCurrentTab()
-      console.log(
-        data?.success
-          ? `[PageAssist] Screenshot is taken`
-          : `[PageAssist] Screenshot is not taken`
-      )
+
       const visionImage = data?.screenshot || ""
 
       if (visionImage === "") {
@@ -551,20 +663,20 @@ export const useMessage = () => {
 
       if (prompt && !selectedPrompt) {
         applicationChatHistory.unshift(
-          new SystemMessage({
+          await systemPromptFormatter({
             content: prompt
           })
         )
       }
       if (selectedPrompt) {
         applicationChatHistory.unshift(
-          new SystemMessage({
+          await systemPromptFormatter({
             content: selectedPrompt.content
           })
         )
       }
 
-      let humanMessage = humanMessageFormatter({
+      let humanMessage = await humanMessageFormatter({
         content: [
           {
             text: message,
@@ -575,7 +687,8 @@ export const useMessage = () => {
             type: "image_url"
           }
         ],
-        model: selectedModel
+        model: selectedModel,
+        useOCR
       })
 
       let generationInfo: any | undefined = undefined
@@ -590,7 +703,7 @@ export const useMessage = () => {
                 try {
                   generationInfo = output?.generations?.[0][0]?.generationInfo
                 } catch (e) {
-                  console.log("handleLLMEnd error", e)
+                  console.error("handleLLMEnd error", e)
                 }
               }
             }
@@ -598,18 +711,53 @@ export const useMessage = () => {
         }
       )
       let count = 0
+      let reasoningStartTime: Date | undefined = undefined
+      let reasoningEndTime: Date | undefined = undefined
+      let timetaken = 0
+      let apiReasoning = false
       for await (const chunk of chunks) {
+        if (chunk?.additional_kwargs?.reasoning_content) {
+          const reasoningContent = mergeReasoningContent(
+            fullText,
+            chunk?.additional_kwargs?.reasoning_content || ""
+          )
+          contentToSave = reasoningContent
+          fullText = reasoningContent
+          apiReasoning = true
+        } else {
+          if (apiReasoning) {
+            fullText += "</think>"
+            contentToSave += "</think>"
+            apiReasoning = false
+          }
+        }
+
         contentToSave += chunk?.content
         fullText += chunk?.content
         if (count === 0) {
           setIsProcessing(true)
+        }
+        if (isReasoningStarted(fullText) && !reasoningStartTime) {
+          reasoningStartTime = new Date()
+        }
+
+        if (
+          reasoningStartTime &&
+          !reasoningEndTime &&
+          isReasoningEnded(fullText)
+        ) {
+          reasoningEndTime = new Date()
+          const reasoningTime =
+            reasoningEndTime.getTime() - reasoningStartTime.getTime()
+          timetaken = reasoningTime
         }
         setMessages((prev) => {
           return prev.map((message) => {
             if (message.id === generateMessageId) {
               return {
                 ...message,
-                message: fullText + "▋"
+                message: fullText + "▋",
+                reasoning_time_taken: timetaken
               }
             }
             return message
@@ -623,7 +771,8 @@ export const useMessage = () => {
             return {
               ...message,
               message: fullText,
-              generationInfo
+              generationInfo,
+              reasoning_time_taken: timetaken
             }
           }
           return message
@@ -652,7 +801,8 @@ export const useMessage = () => {
         fullText,
         source: [],
         message_source: "copilot",
-        generationInfo
+        generationInfo,
+        reasoning_time_taken: timetaken
       })
 
       setIsProcessing(false)
@@ -725,11 +875,27 @@ export const useMessage = () => {
         currentChatModelSettings?.numPredict ??
         userDefaultModelSettings?.numPredict,
       useMMap:
-        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap
+        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap,
+      minP: currentChatModelSettings?.minP ?? userDefaultModelSettings?.minP,
+      repeatLastN:
+        currentChatModelSettings?.repeatLastN ??
+        userDefaultModelSettings?.repeatLastN,
+      repeatPenalty:
+        currentChatModelSettings?.repeatPenalty ??
+        userDefaultModelSettings?.repeatPenalty,
+      tfsZ: currentChatModelSettings?.tfsZ ?? userDefaultModelSettings?.tfsZ,
+      numKeep:
+        currentChatModelSettings?.numKeep ?? userDefaultModelSettings?.numKeep,
+      numThread:
+        currentChatModelSettings?.numThread ??
+        userDefaultModelSettings?.numThread,
+      useMlock:
+        currentChatModelSettings?.useMlock ?? userDefaultModelSettings?.useMlock
     })
 
     let newMessage: Message[] = []
     let generateMessageId = generateID()
+    const modelInfo = await getModelNicknameByID(selectedModel)
 
     if (!isRegenerate) {
       newMessage = [
@@ -746,7 +912,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     } else {
@@ -757,7 +925,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     }
@@ -769,17 +939,18 @@ export const useMessage = () => {
       const prompt = await systemPromptForNonRag()
       const selectedPrompt = await getPromptById(selectedSystemPrompt)
 
-      let humanMessage = humanMessageFormatter({
+      let humanMessage = await humanMessageFormatter({
         content: [
           {
             text: message,
             type: "text"
           }
         ],
-        model: selectedModel
+        model: selectedModel,
+        useOCR
       })
       if (image.length > 0) {
-        humanMessage = humanMessageFormatter({
+        humanMessage = await humanMessageFormatter({
           content: [
             {
               text: message,
@@ -790,7 +961,8 @@ export const useMessage = () => {
               type: "image_url"
             }
           ],
-          model: selectedModel
+          model: selectedModel,
+          useOCR
         })
       }
 
@@ -798,14 +970,14 @@ export const useMessage = () => {
 
       if (prompt && !selectedPrompt) {
         applicationChatHistory.unshift(
-          new SystemMessage({
+          await systemPromptFormatter({
             content: prompt
           })
         )
       }
       if (selectedPrompt) {
         applicationChatHistory.unshift(
-          new SystemMessage({
+          await systemPromptFormatter({
             content: selectedPrompt.content
           })
         )
@@ -823,7 +995,7 @@ export const useMessage = () => {
                 try {
                   generationInfo = output?.generations?.[0][0]?.generationInfo
                 } catch (e) {
-                  console.log("handleLLMEnd error", e)
+                  console.error("handleLLMEnd error", e)
                 }
               }
             }
@@ -831,18 +1003,54 @@ export const useMessage = () => {
         }
       )
       let count = 0
+      let reasoningStartTime: Date | null = null
+      let reasoningEndTime: Date | null = null
+      let timetaken = 0
+      let apiReasoning = false
+
       for await (const chunk of chunks) {
+        if (chunk?.additional_kwargs?.reasoning_content) {
+          const reasoningContent = mergeReasoningContent(
+            fullText,
+            chunk?.additional_kwargs?.reasoning_content || ""
+          )
+          contentToSave = reasoningContent
+          fullText = reasoningContent
+          apiReasoning = true
+        } else {
+          if (apiReasoning) {
+            fullText += "</think>"
+            contentToSave += "</think>"
+            apiReasoning = false
+          }
+        }
+
         contentToSave += chunk?.content
         fullText += chunk?.content
         if (count === 0) {
           setIsProcessing(true)
+        }
+        if (isReasoningStarted(fullText) && !reasoningStartTime) {
+          reasoningStartTime = new Date()
+        }
+
+        if (
+          reasoningStartTime &&
+          !reasoningEndTime &&
+          isReasoningEnded(fullText)
+        ) {
+          reasoningEndTime = new Date()
+          const reasoningTime =
+            reasoningEndTime.getTime() - reasoningStartTime.getTime()
+          timetaken = reasoningTime
         }
         setMessages((prev) => {
           return prev.map((message) => {
             if (message.id === generateMessageId) {
               return {
                 ...message,
-                message: fullText + "▋"
+                message: fullText + "▋",
+                reasoning_time_taken: timetaken
               }
             }
             return message
@@ -857,7 +1065,8 @@ export const useMessage = () => {
             return {
               ...message,
               message: fullText,
-              generationInfo
+              generationInfo,
+              reasoning_time_taken: timetaken
             }
           }
           return message
@@ -887,7 +1096,8 @@ export const useMessage = () => {
         fullText,
         source: [],
         message_source: "copilot",
-        generationInfo
+        generationInfo,
+        reasoning_time_taken: timetaken
       })
 
       setIsProcessing(false)
@@ -955,11 +1165,27 @@ export const useMessage = () => {
         currentChatModelSettings?.numPredict ??
         userDefaultModelSettings?.numPredict,
       useMMap:
-        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap
+        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap,
+      minP: currentChatModelSettings?.minP ?? userDefaultModelSettings?.minP,
+      repeatLastN:
+        currentChatModelSettings?.repeatLastN ??
+        userDefaultModelSettings?.repeatLastN,
+      repeatPenalty:
+        currentChatModelSettings?.repeatPenalty ??
+        userDefaultModelSettings?.repeatPenalty,
+      tfsZ: currentChatModelSettings?.tfsZ ?? userDefaultModelSettings?.tfsZ,
+      numKeep:
+        currentChatModelSettings?.numKeep ?? userDefaultModelSettings?.numKeep,
+      numThread:
+        currentChatModelSettings?.numThread ??
+        userDefaultModelSettings?.numThread,
+      useMlock:
+        currentChatModelSettings?.useMlock ?? userDefaultModelSettings?.useMlock
     })
 
     let newMessage: Message[] = []
     let generateMessageId = generateID()
+    const modelInfo = await getModelNicknameByID(selectedModel)
 
     if (!isRegenerate) {
       newMessage = [
@@ -976,7 +1202,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     } else {
@@ -987,7 +1215,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     }
@@ -1000,47 +1230,95 @@ export const useMessage = () => {
 
       let query = message
 
-      if (newMessage.length > 2) {
-        let questionPrompt = await geWebSearchFollowUpPrompt()
-        const lastTenMessages = newMessage.slice(-10)
-        lastTenMessages.pop()
-        const chat_history = lastTenMessages
-          .map((message) => {
-            return `${message.isBot ? "Assistant: " : "Human: "}${message.message}`
-          })
-          .join("\n")
-        const promptForQuestion = questionPrompt
-          .replaceAll("{chat_history}", chat_history)
-          .replaceAll("{question}", message)
-        const questionOllama = await pageAssistModel({
-          model: selectedModel!,
-          baseUrl: cleanUrl(url),
-          keepAlive:
-            currentChatModelSettings?.keepAlive ??
-            userDefaultModelSettings?.keepAlive,
-          temperature:
-            currentChatModelSettings?.temperature ??
-            userDefaultModelSettings?.temperature,
-          topK:
-            currentChatModelSettings?.topK ?? userDefaultModelSettings?.topK,
-          topP:
-            currentChatModelSettings?.topP ?? userDefaultModelSettings?.topP,
-          numCtx:
-            currentChatModelSettings?.numCtx ??
-            userDefaultModelSettings?.numCtx,
-          seed: currentChatModelSettings?.seed,
-          numGpu:
-            currentChatModelSettings?.numGpu ??
-            userDefaultModelSettings?.numGpu,
-          numPredict:
-            currentChatModelSettings?.numPredict ??
-            userDefaultModelSettings?.numPredict,
-          useMMap:
-            currentChatModelSettings?.useMMap ??
-            userDefaultModelSettings?.useMMap
+      // if (newMessage.length > 2) {
+      let questionPrompt = await geWebSearchFollowUpPrompt()
+      const lastTenMessages = newMessage.slice(-10)
+      lastTenMessages.pop()
+      const chat_history = lastTenMessages
+        .map((message) => {
+          return `${message.isBot ? "Assistant: " : "Human: "}${message.message}`
         })
-        const response = await questionOllama.invoke(promptForQuestion)
-        query = response.content.toString()
+        .join("\n")
+      const promptForQuestion = questionPrompt
+        .replaceAll("{chat_history}", chat_history)
+        .replaceAll("{question}", message)
+      const questionModel = await pageAssistModel({
+        model: selectedModel!,
+        baseUrl: cleanUrl(url),
+        keepAlive:
+          currentChatModelSettings?.keepAlive ??
+          userDefaultModelSettings?.keepAlive,
+        temperature:
+          currentChatModelSettings?.temperature ??
+          userDefaultModelSettings?.temperature,
+        topK: currentChatModelSettings?.topK ?? userDefaultModelSettings?.topK,
+        topP: currentChatModelSettings?.topP ?? userDefaultModelSettings?.topP,
+        numCtx:
+          currentChatModelSettings?.numCtx ?? userDefaultModelSettings?.numCtx,
+        seed: currentChatModelSettings?.seed,
+        numGpu:
+          currentChatModelSettings?.numGpu ?? userDefaultModelSettings?.numGpu,
+        numPredict:
+          currentChatModelSettings?.numPredict ??
+          userDefaultModelSettings?.numPredict,
+        useMMap:
+          currentChatModelSettings?.useMMap ??
+          userDefaultModelSettings?.useMMap,
+        minP: currentChatModelSettings?.minP ?? userDefaultModelSettings?.minP,
+        repeatLastN:
+          currentChatModelSettings?.repeatLastN ??
+          userDefaultModelSettings?.repeatLastN,
+        repeatPenalty:
+          currentChatModelSettings?.repeatPenalty ??
+          userDefaultModelSettings?.repeatPenalty,
+        tfsZ: currentChatModelSettings?.tfsZ ?? userDefaultModelSettings?.tfsZ,
+        numKeep:
+          currentChatModelSettings?.numKeep ??
+          userDefaultModelSettings?.numKeep,
+        numThread:
+          currentChatModelSettings?.numThread ??
+          userDefaultModelSettings?.numThread,
+        useMlock:
+          currentChatModelSettings?.useMlock ??
+          userDefaultModelSettings?.useMlock
+      })
+
+      let questionMessage = await humanMessageFormatter({
+        content: [
+          {
+            text: promptForQuestion,
+            type: "text"
+          }
+        ],
+        model: selectedModel,
+        useOCR: useOCR
+      })
+
+      if (image.length > 0) {
+        questionMessage = await humanMessageFormatter({
+          content: [
+            {
+              text: promptForQuestion,
+              type: "text"
+            },
+            {
+              image_url: image,
+              type: "image_url"
+            }
+          ],
+          model: selectedModel,
+          useOCR: useOCR
+        })
+      }
+      try {
+        const isWebQuery = await isQueryHaveWebsite(query)
+        if (!isWebQuery) {
+          const response = await questionModel.invoke([questionMessage])
+          query = response?.content?.toString() || message
+          query = removeReasoning(query)
+        }
+      } catch (error) {
+        console.error("Error in questionModel.invoke:", error)
       }
 
       const { prompt, source } = await getSystemPromptForWeb(query)
@@ -1048,17 +1326,18 @@ export const useMessage = () => {
 
       //  message = message.trim().replaceAll("\n", " ")
 
-      let humanMessage = humanMessageFormatter({
+      let humanMessage = await humanMessageFormatter({
         content: [
           {
             text: message,
             type: "text"
           }
         ],
-        model: selectedModel
+        model: selectedModel,
+        useOCR
       })
       if (image.length > 0) {
-        humanMessage = humanMessageFormatter({
+        humanMessage = await humanMessageFormatter({
           content: [
             {
               text: message,
@@ -1069,7 +1348,8 @@ export const useMessage = () => {
               type: "image_url"
             }
           ],
-          model: selectedModel
+          model: selectedModel,
+          useOCR
         })
       }
 
@@ -1077,7 +1357,7 @@ export const useMessage = () => {
 
       if (prompt) {
         applicationChatHistory.unshift(
-          new SystemMessage({
+          await systemPromptFormatter({
             content: prompt
           })
         )
@@ -1094,7 +1374,7 @@ export const useMessage = () => {
                 try {
                   generationInfo = output?.generations?.[0][0]?.generationInfo
                 } catch (e) {
-                  console.log("handleLLMEnd error", e)
+                  console.error("handleLLMEnd error", e)
                 }
               }
             }
@@ -1102,18 +1382,54 @@ export const useMessage = () => {
         }
       )
       let count = 0
+      let timetaken = 0
+      let reasoningStartTime: Date | undefined = undefined
+      let reasoningEndTime: Date | undefined = undefined
+      let apiReasoning = false
       for await (const chunk of chunks) {
+        if (chunk?.additional_kwargs?.reasoning_content) {
+          const reasoningContent = mergeReasoningContent(
+            fullText,
+            chunk?.additional_kwargs?.reasoning_content || ""
+          )
+          contentToSave = reasoningContent
+          fullText = reasoningContent
+          apiReasoning = true
+        } else {
+          if (apiReasoning) {
+            fullText += "</think>"
+            contentToSave += "</think>"
+            apiReasoning = false
+          }
+        }
+
         contentToSave += chunk?.content
         fullText += chunk?.content
         if (count === 0) {
           setIsProcessing(true)
+        }
+
+        if (isReasoningStarted(fullText) && !reasoningStartTime) {
+          reasoningStartTime = new Date()
+        }
+
+        if (
+          reasoningStartTime &&
+          !reasoningEndTime &&
+          isReasoningEnded(fullText)
+        ) {
+          reasoningEndTime = new Date()
+          const reasoningTime =
+            reasoningEndTime.getTime() - reasoningStartTime.getTime()
+          timetaken = reasoningTime
         }
         setMessages((prev) => {
           return prev.map((message) => {
             if (message.id === generateMessageId) {
               return {
                 ...message,
-                message: fullText + "▋"
+                message: fullText + "▋",
+                reasoning_time_taken: timetaken
               }
             }
             return message
@@ -1129,7 +1445,8 @@ export const useMessage = () => {
               ...message,
               message: fullText,
               sources: source,
-              generationInfo
+              generationInfo,
+              reasoning_time_taken: timetaken
             }
           }
           return message
@@ -1158,7 +1475,8 @@ export const useMessage = () => {
         image,
         fullText,
         source,
-        generationInfo
+        generationInfo,
+        reasoning_time_taken: timetaken
       })
 
       setIsProcessing(false)
@@ -1227,11 +1545,27 @@ export const useMessage = () => {
         currentChatModelSettings?.numPredict ??
         userDefaultModelSettings?.numPredict,
       useMMap:
-        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap
+        currentChatModelSettings?.useMMap ?? userDefaultModelSettings?.useMMap,
+      minP: currentChatModelSettings?.minP ?? userDefaultModelSettings?.minP,
+      repeatLastN:
+        currentChatModelSettings?.repeatLastN ??
+        userDefaultModelSettings?.repeatLastN,
+      repeatPenalty:
+        currentChatModelSettings?.repeatPenalty ??
+        userDefaultModelSettings?.repeatPenalty,
+      tfsZ: currentChatModelSettings?.tfsZ ?? userDefaultModelSettings?.tfsZ,
+      numKeep:
+        currentChatModelSettings?.numKeep ?? userDefaultModelSettings?.numKeep,
+      numThread:
+        currentChatModelSettings?.numThread ??
+        userDefaultModelSettings?.numThread,
+      useMlock:
+        currentChatModelSettings?.useMlock ?? userDefaultModelSettings?.useMlock
     })
 
     let newMessage: Message[] = []
     let generateMessageId = generateID()
+    const modelInfo = await getModelNicknameByID(selectedModel)
 
     if (!isRegenerate) {
       newMessage = [
@@ -1249,7 +1583,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     } else {
@@ -1260,7 +1596,9 @@ export const useMessage = () => {
           name: selectedModel,
           message: "▋",
           sources: [],
-          id: generateMessageId
+          id: generateMessageId,
+          modelImage: modelInfo?.model_avatar,
+          modelName: modelInfo?.model_name || selectedModel
         }
       ]
     }
@@ -1270,17 +1608,18 @@ export const useMessage = () => {
 
     try {
       const prompt = await getPrompt(messageType)
-      let humanMessage = humanMessageFormatter({
+      let humanMessage = await humanMessageFormatter({
         content: [
           {
             text: prompt.replace("{text}", message),
             type: "text"
           }
         ],
-        model: selectedModel
+        model: selectedModel,
+        useOCR
       })
       if (image.length > 0) {
-        humanMessage = humanMessageFormatter({
+        humanMessage = await humanMessageFormatter({
           content: [
             {
               text: prompt.replace("{text}", message),
@@ -1291,7 +1630,8 @@ export const useMessage = () => {
               type: "image_url"
             }
           ],
-          model: selectedModel
+          model: selectedModel,
+          useOCR
         })
       }
 
@@ -1305,25 +1645,60 @@ export const useMessage = () => {
               try {
                 generationInfo = output?.generations?.[0][0]?.generationInfo
               } catch (e) {
-                console.log("handleLLMEnd error", e)
+                console.error("handleLLMEnd error", e)
               }
             }
           }
         ]
       })
       let count = 0
+      let reasoningStartTime: Date | null = null
+      let reasoningEndTime: Date | null = null
+      let timetaken = 0
+      let apiReasoning = false
       for await (const chunk of chunks) {
+        if (chunk?.additional_kwargs?.reasoning_content) {
+          const reasoningContent = mergeReasoningContent(
+            fullText,
+            chunk?.additional_kwargs?.reasoning_content || ""
+          )
+          contentToSave = reasoningContent
+          fullText = reasoningContent
+          apiReasoning = true
+        } else {
+          if (apiReasoning) {
+            fullText += "</think>"
+            contentToSave += "</think>"
+            apiReasoning = false
+          }
+        }
+
         contentToSave += chunk?.content
         fullText += chunk?.content
         if (count === 0) {
           setIsProcessing(true)
+        }
+        if (isReasoningStarted(fullText) && !reasoningStartTime) {
+          reasoningStartTime = new Date()
+        }
+
+        if (
+          reasoningStartTime &&
+          !reasoningEndTime &&
+          isReasoningEnded(fullText)
+        ) {
+          reasoningEndTime = new Date()
+          const reasoningTime =
+            reasoningEndTime.getTime() - reasoningStartTime.getTime()
+          timetaken = reasoningTime
         }
         setMessages((prev) => {
           return prev.map((message) => {
             if (message.id === generateMessageId) {
               return {
                 ...message,
-                message: fullText + "▋"
+                message: fullText + "▋",
+                reasoning_time_taken: timetaken
               }
             }
             return message
@@ -1338,7 +1713,8 @@ export const useMessage = () => {
             return {
               ...message,
               message: fullText,
-              generationInfo
+              generationInfo,
+              reasoning_time_taken: timetaken
             }
           }
           return message
@@ -1370,7 +1746,8 @@ export const useMessage = () => {
         source: [],
         message_source: "copilot",
         message_type: messageType,
-        generationInfo
+        generationInfo,
+        reasoning_time_taken: timetaken
       })
 
       setIsProcessing(false)
@@ -1590,6 +1967,11 @@ export const useMessage = () => {
     selectedSystemPrompt,
     setSelectedSystemPrompt,
     speechToTextLanguage,
-    setSpeechToTextLanguage
+    setSpeechToTextLanguage,
+    useOCR,
+    setUseOCR,
+    defaultInternetSearchOn,
+    defaultChatWithWebsite,
+    history
   }
 }

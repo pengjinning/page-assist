@@ -3,8 +3,7 @@ import { useMessageOption } from "~/hooks/useMessageOption"
 import { PlaygroundEmpty } from "./PlaygroundEmpty"
 import { PlaygroundMessage } from "~/components/Common/Playground/Message"
 import { MessageSourcePopup } from "@/components/Common/Playground/MessageSourcePopup"
-import { useSmartScroll } from "~/hooks/useSmartScroll"
-import { ChevronDown } from "lucide-react"
+import { useStorage } from "@plasmohq/storage/hook"
 
 export const PlaygroundChat = () => {
   const {
@@ -13,23 +12,18 @@ export const PlaygroundChat = () => {
     regenerateLastMessage,
     isSearchingInternet,
     editMessage,
-    ttsEnabled
+    ttsEnabled,
+    onSubmit
   } = useMessageOption()
   const [isSourceOpen, setIsSourceOpen] = React.useState(false)
   const [source, setSource] = React.useState<any>(null)
-
-  const { containerRef, isAtBottom, scrollToBottom } = useSmartScroll(
-    messages,
-    streaming
-  )
+  const [openReasoning] = useStorage("openReasoning", false)
 
   return (
     <>
-      <div
-        ref={containerRef}
-        className="custom-scrollbar  grow flex flex-col md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto h-[calc(100vh-160px)]">
+      <div className="relative flex w-full flex-col items-center pt-16 pb-4">
         {messages.length === 0 && (
-          <div className="mt-32">
+          <div className="mt-32 w-full">
             <PlaygroundEmpty />
           </div>
         )}
@@ -55,21 +49,23 @@ export const PlaygroundChat = () => {
             }}
             isTTSEnabled={ttsEnabled}
             generationInfo={message?.generationInfo}
+            isStreaming={streaming}
+            reasoningTimeTaken={message?.reasoning_time_taken}
+            openReasoning={openReasoning}
+            modelImage={message?.modelImage}
+            modelName={message?.modelName}
+            onContinue={() => {
+              onSubmit({
+                image: "",
+                message: "",
+                isContinue: true
+              })
+            }}
           />
         ))}
-        {messages.length > 0 && (
-          <div className="w-full h-16 flex-shrink-0"></div>
-        )}
       </div>
-      {!isAtBottom && (
-        <div className="fixed bottom-36 z-20 left-0 right-0 flex justify-center">
-          <button
-            onClick={scrollToBottom}
-            className="bg-white border border-gray-100 dark:border-none dark:bg-white/20 p-1.5 rounded-full pointer-events-auto">
-            <ChevronDown className="size-4 text-gray-600 dark:text-gray-300" />
-          </button>
-        </div>
-      )}
+      <div className="w-full pb-[157px]"></div>
+
       <MessageSourcePopup
         open={isSourceOpen}
         setOpen={setIsSourceOpen}

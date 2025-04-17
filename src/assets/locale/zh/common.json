@@ -40,6 +40,7 @@
     "copyToClipboard": "复制到剪贴板",
     "webSearch": "搜索网络",
     "regenerate": "重新生成",
+    "continue": "继续回答",
     "edit": "编辑",
     "delete": "删除",
     "saveAndSubmit": "保存 & 提交",
@@ -67,8 +68,8 @@
                 "placeholder": "输入温度值（例如：0.7、1.0）"
             },
             "numCtx": {
-                "label": "上下文数量",
-                "placeholder": "输入上下文数量（默认：2048）"
+                "label": "上下文窗口大小 (num_ctx)",
+                "placeholder": "输入上下文窗口大小（默认：2048）"
             },
             "numPredict": {
                 "label": "最大令牌数 (num_predict)",
@@ -87,6 +88,36 @@
                 "label": "Top P",
                 "placeholder": "输入Top P值（例如：0.9、0.95）"
             },
+            "useMMap": {
+                "label": "使用 mmap"
+            },
+            "tfsZ": {
+                "label": "TFS-Z",
+                "placeholder": "例如：1.0, 1.1"
+            },
+            "numKeep": {
+                "label": "Num Keep",
+                "placeholder": "例如：256, 512"
+            },
+            "numThread": {
+                "label": "Num Thread",
+                "placeholder": "例如：8, 16"
+            },
+            "useMlock": {
+                "label": "使用 mlock"
+            },
+            "minP": {
+                "label": "Min P",
+                "placeholder": "例如：0.05"
+            },
+            "repeatPenalty": {
+                "label": "Repeat Penalty",
+                "placeholder": "例如：1.1, 1.2"
+            },
+            "repeatLastN": {
+                "label": "Repeat Last N",
+                "placeholder": "例如：64, 128"
+            },
             "numGpu": {
                 "label": "Num GPU",
                 "placeholder": "输入要发送到 GPU 的层数"
@@ -103,9 +134,14 @@
         "summary": "总结",
         "explain": "解释",
         "rephrase": "重述",
-        "translate": "翻译"
+        "translate": "翻译",
+        "custom": "自定义"
     },
     "citations": "引用",
+    "segmented": {
+        "ollama": "Ollama 模型",
+        "custom": "自定义模型"
+    },
     "downloadCode": "下载代码",
     "date": {
         "pinned": "已置顶",
@@ -116,5 +152,11 @@
     },
     "pin": "置顶",
     "unpin": "取消置顶",
-    "generationInfo": "生成信息"
+    "generationInfo": "生成信息",
+    "sidebarChat": "侧边栏聊天",
+    "reasoning": {
+        "thinking": "思考中....",
+        "thought": "思考了 {{time}}"
+    },
+    "mermaid": "Mermaid"
 }

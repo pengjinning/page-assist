@@ -32,6 +32,8 @@ type ModelSettings = {
   useMLock?: boolean
   useMMap?: boolean
   vocabOnly?: boolean
+  minP?: number
+  useMlock?: boolean
 }
 
 const keys = [
@@ -62,7 +64,9 @@ const keys = [
   "typicalP",
   "useMLock",
   "useMMap",
-  "vocabOnly"
+  "vocabOnly",
+  "minP",
+  "useMlock"
 ]
 
 export const getAllModelSettings = async () => {
@@ -71,9 +75,9 @@ export const getAllModelSettings = async () => {
     for (const key of keys) {
       const value = await storage.get(key)
       settings[key] = value
-      if (!value && key === "keepAlive") {
-        settings[key] = "5m"
-      }
+      // if (!value && key === "keepAlive") {
+      //   settings[key] = "5m"
+      // }
     }
     return settings
   } catch (error) {
@@ -94,9 +98,9 @@ export const getAllDefaultModelSettings = async (): Promise<ModelSettings> => {
   for (const key of keys) {
     const value = await storage.get(key)
     settings[key] = value
-    if (!value && key === "keepAlive") {
-      settings[key] = "5m"
-    }
+    // if (!value && key === "keepAlive") {
+    //   settings[key] = "5m"
+    // }
   }
   return settings
 }
@@ -146,3 +150,24 @@ export const setLastUsedChatSystemPrompt = async (
   await storage.set(`lastUsedChatSystemPrompt-${historyId}`, prompt)
 }
 
+
+export const getModelSettings = async (model_id: string) => {
+  try {
+    const settings = await storage.get<ModelSettings>(`modelSettings:${model_id}`)
+    if (!settings) {
+      return {}
+    }
+    return settings
+  } catch (error) {
+    console.error(error)
+    return {}
+  }
+}
+
+export const setModelSettings = async ({model_id,settings}: {model_id: string, settings: Partial<ModelSettings>}) => {
+  try {
+    await storage.set(`modelSettings:${model_id}`, settings)
+  } catch (error) {
+    console.error(error)
+  }
+}

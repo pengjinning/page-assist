@@ -38,6 +38,18 @@
       },
       "ollamaStatus": {
         "label": "Aktivér eller deaktivér Ollama forbindelsesstatus kontrol"
+      },
+      "wideMode": {
+        "label": "Aktivér bredskærm tilstand"
+      },
+      "openReasoning": {
+        "label": "Åbn Ræsonnement Sammenfoldet som standard"
+      },
+      "userChatBubble": {
+        "label": "Brug chatboble til brugermeddelelser"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "Kopiér automatisk svar til udklipsholder"
       }
     },
     "sidepanelRag": {
@@ -74,6 +86,9 @@
       "braveApi": {
         "label": "Brave API Nøgle",
         "placeholder": "Indtast din Brave API nøgle"
+      },
+      "searchOnByDefault": {
+        "label": "Internet Søgning TIL som standard"
       }
     },
     "system": {
@@ -110,6 +125,19 @@
       },
       "ssmlEnabled": {
         "label": "Aktiver SSML (Speech Synthesis Markup Language)"
+      },
+      "removeReasoningTagTTS": {
+        "label": "Fjern Ræsonnement Tag fra TTS"
+      }
+    },
+    "stt": {
+      "heading": "Tale-til-Tekst Indstillinger",
+      "autoStopTimeout": {
+        "label": "Auto Stop Timeout (ms)",
+        "placeholder": "Indtast auto-stop timeout i millisekunder"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "Auto Send Stemmebesked"
       }
     }
   },
@@ -259,6 +287,10 @@
         "label": "Ollama URL",
         "placeholder": "Indtast Ollama URL"
       },
+      "globalEnable": {
+        "label": "Aktiver eller Deaktiver Ollama Integration Globalt",
+        "warning": "Ved at deaktivere Ollama-integration globalt vil Page Assist ikke hente modeller fra Ollama. Du kan stadig tilføje Ollama-instans fra <anchor>OpenAI-kompatibel API</anchor> sektionen, som vil fungere fint."
+      },
       "advanced": {
         "label": "Avanceret Ollama URL Konfiguration",
         "urlRewriteEnabled": {
@@ -267,6 +299,9 @@
         "rewriteUrl": {
           "label": "Tilpasset Oprindelses URL",
           "placeholder": "Indtast tilpasset oprindelses URL"
+        },
+        "autoCORSFix": {
+          "label": "Aktiver eller Deaktiver Automatisk Ollama CORS Fix"
         },
         "headers": {
           "label": "Tilpas Headers",
@@ -331,6 +366,14 @@
         "label": "Antal Hentede Dokumenter",
         "placeholder": "Indtast Number of Retrieved Documents",
         "required": "Venligst indtast the number of retrieved documents"
+      },
+      "splittingSeparator": {
+        "label": "Separator",
+        "placeholder": "Indtast Separator (f.eks. \\n\\n)",
+        "required": "Indtast venligst en separator"
+      },
+      "splittingStrategy": {
+        "label": "Tekst Splitter"
       }
     },
     "prompt": {

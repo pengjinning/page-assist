@@ -40,6 +40,7 @@
   "copyToClipboard": "クリップボードにコピー",
   "webSearch": "ウェブを検索中",
   "regenerate": "再生成",
+  "continue": "続ける",
   "edit": "編集",
   "delete": "削除",
   "saveAndSubmit": "保存して送信",
@@ -67,8 +68,8 @@
         "placeholder": "温度値を入力してください（例：0.7、1.0）"
       },
       "numCtx": {
-        "label": "コンテキストの数",
-        "placeholder": "コンテキスト数を入力してください（デフォルト：2048）"
+        "label": "コンテキストウィンドウサイズ (num_ctx)",
+        "placeholder": "コンテキストウィンドウサイズを入力してください（デフォルト：2048）"
       },
       "numPredict": {
         "label": "最大トークン数 (num_predict)",
@@ -116,5 +117,10 @@
   },
   "pin": "固定",
   "unpin": "固定解除",
-  "generationInfo": "生成情報"
+  "generationInfo": "生成情報",
+  "sidebarChat": "サイドバーチャット",
+  "reasoning": {
+    "thinking": "考え中....",
+    "thought": "{{time}}の思考"
+  }
 }

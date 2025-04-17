@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Gjenoppta siste chat ved åpning av SidePanel (copilot)"
       },
+      "turnOnChatWithWebsite": {
+        "label": "Aktiver Chat med Nettsted som standard (Copilot)"
+      },
       "webUIResumeLastChat": {
         "label": "Gjenoppta siste chat når Web UI åpnes"
       },
@@ -38,6 +41,18 @@
       },
       "ollamaStatus": {
         "label": "Aktiver eller deaktiver Ollama tilkoblingsstatussjekk"
+      },
+      "wideMode": {
+        "label": "Aktiver bredskjerm-modus"
+      },
+      "openReasoning": {
+        "label": "Åpne Resonnement Sammenfoldet som standard"
+      },
+      "userChatBubble": {
+        "label": "Bruk chatboble for bruker meldinger"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "Automatisk kopier svar til utklippstavle"
       }
     },
     "sidepanelRag": {
@@ -74,6 +89,9 @@
       "braveApi": {
         "label": "Brave API Nøkkel",
         "placeholder": "Skriv inn din Brave API nøkkel"
+      },
+      "searchOnByDefault": {
+        "label": "Internett-søk PÅ som standard"
       }
     },
     "system": {
@@ -110,6 +128,19 @@
       },
       "ssmlEnabled": {
         "label": "Aktiver SSML (Speech Synthesis Markup Language)"
+      },
+      "removeReasoningTagTTS": {
+        "label": "Fjern Resonneringsmerke fra TTS"
+      }
+    },
+    "stt": {
+      "heading": "Tale-til-tekst Innstillinger",
+      "autoStopTimeout": {
+        "label": "Auto-stopp Tidsavbrudd (ms)",
+        "placeholder": "Skriv inn auto-stopp tidsavbrudd i millisekunder"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "Auto-send Talemelding"
       }
     }
   },
@@ -259,6 +290,10 @@
         "label": "Ollama URL",
         "placeholder": "Skriv inn Ollama URL"
       },
+      "globalEnable": {
+        "label": "Aktiver eller Deaktiver Ollama-integrasjon Globalt",
+        "warning": "Ved å deaktivere Ollama-integrasjon globalt, vil ikke Page Assist hente modeller fra Ollama. Du kan fortsatt legge til Ollama-instans fra <anchor>OpenAI-kompatibel API</anchor>-seksjonen som vil fungere fint."
+      },
       "advanced": {
         "label": "Avansert Ollama URL-konfigurasjon",
         "urlRewriteEnabled": {
@@ -267,6 +302,9 @@
         "rewriteUrl": {
           "label": "Tilpasset opprinnelses-URL",
           "placeholder": "Skriv inn tilpasset opprinnelses-URL"
+        },
+        "autoCORSFix": {
+          "label": "Aktiver eller deaktiver automatisk Ollama CORS-fiks"
         },
         "headers": {
           "label": "Tilpass Headers",
@@ -331,6 +369,14 @@
         "label": "Antall hentede dokumenter",
         "placeholder": "Skriv inn antall hentede dokumenter",
         "required": "Vennligst skriv inn antall hentede dokumenter"
+      },
+      "splittingSeparator": {
+        "label": "Separator",
+        "placeholder": "Skriv inn separator (f.eks. \\n\\n)",
+        "required": "Vennligst skriv inn en separator"
+      },
+      "splittingStrategy": {
+        "label": "Tekstdeler"
       }
     },
     "prompt": {

@@ -21,6 +21,9 @@
       "copilotResumeLastChat": {
         "label": "Retomar el último chat al abrir el Panel Lateral (Copilot)"
       },
+      "turnOnChatWithWebsite": {
+        "label": "Habilitar Chat con Sitio Web por defecto (Copilot)"
+      },
       "webUIResumeLastChat": {
         "label": "Retomar el último chat al abrir la Interfaz Web"
       },
@@ -38,6 +41,18 @@
       },
       "ollamaStatus": {
         "label": "Habilitar o deshabilitar la verificación del estado de conexión de Ollama"
+      },
+      "wideMode": {
+        "label": "Habilitar modo pantalla ancha"
+      },
+      "openReasoning": {
+        "label": "Abrir el Razonamiento Colapsado por defecto"
+      },
+      "userChatBubble": {
+        "label": "Usar Burbuja de Chat para Mensajes del Usuario"
+      },
+      "autoCopyResponseToClipboard": {
+        "label": "Copiar automáticamente la respuesta al portapapeles"
       }
     },
     "sidepanelRag": {
@@ -74,6 +89,9 @@
       "braveApi": {
         "label": "Clave API de Brave",
         "placeholder": "Ingrese su clave API de Brave"
+      },
+      "searchOnByDefault": {
+        "label": "Búsqueda en Internet activada por defecto"
       }
     },
     "system": {
@@ -110,6 +128,19 @@
       },
       "ssmlEnabled": {
         "label": "Habilitar SSML (Speech Synthesis Markup Language)"
+      },
+      "removeReasoningTagTTS": {
+        "label": "Eliminar Etiqueta de Razonamiento del TTS"
+      }
+    },
+    "stt": {
+      "heading": "Configuraciones de Voz-a-Texto",
+      "autoStopTimeout": {
+        "label": "Tiempo de Auto-Detención (ms)",
+        "placeholder": "Ingrese el tiempo de auto-detención en milisegundos"
+      },
+      "autoSubmitVoiceMessage": {
+        "label": "Auto-Enviar Mensaje de Voz"
       }
     }
   },
@@ -259,6 +290,10 @@
         "label": "URL de Ollama",
         "placeholder": "Ingrese la URL de Ollama"
       },
+      "globalEnable": {
+        "label": "Habilitar o Deshabilitar la Integración de Ollama Globalmente",
+        "warning": "Al deshabilitar la integración de Ollama globalmente, Page Assist no obtendrá modelos de Ollama. Aún puedes agregar una instancia de Ollama desde la sección de <anchor>API compatible con OpenAI</anchor> que funcionará correctamente."
+      },
       "advanced": {
         "label": "Configuración avanzada de URL de Ollama",
         "urlRewriteEnabled": {
@@ -267,6 +302,9 @@
         "rewriteUrl": {
           "label": "URL Personalizada",
           "placeholder": "Ingresar URL Personalizada"
+        },
+        "autoCORSFix": {
+          "label": "Habilitar o Deshabilitar Corrección Automática de CORS de Ollama"
         },
         "headers": {
           "label": "Encabezados Personalizados",
@@ -331,6 +369,14 @@
         "label": "Número de Documentos Recuperados",
         "placeholder": "Ingrese el Número de Documentos Recuperados",
         "required": "Por favor, ingrese el número de documentos recuperados"
+      },
+      "splittingSeparator": {
+        "label": "Separador",
+        "placeholder": "Ingrese el separador (ej., \\n\\n)",
+        "required": "Por favor, ingrese un separador"
+      },
+      "splittingStrategy": {
+        "label": "Divisor de Texto"
       }
     },
     "prompt": {

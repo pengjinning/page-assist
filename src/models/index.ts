@@ -2,8 +2,11 @@ import { getModelInfo, isCustomModel, isOllamaModel } from "@/db/models"
 import { ChatChromeAI } from "./ChatChromeAi"
 import { ChatOllama } from "./ChatOllama"
 import { getOpenAIConfigById } from "@/db/openai"
-import { ChatOpenAI } from "@langchain/openai"
 import { urlRewriteRuntime } from "@/libs/runtime"
+import { ChatGoogleAI } from "./ChatGoogleAI"
+import { CustomChatOpenAI } from "./CustomChatOpenAI"
+import { getCustomHeaders } from "@/utils/clean-headers"
+import { getModelSettings } from "@/services/model-settings"
 
 export const pageAssistModel = async ({
   model,
@@ -16,7 +19,14 @@ export const pageAssistModel = async ({
   seed,
   numGpu,
   numPredict,
-  useMMap
+  useMMap,
+  minP,
+  repeatLastN,
+  repeatPenalty,
+  tfsZ,
+  numKeep,
+  numThread,
+  useMlock
 }: {
   model: string
   baseUrl: string
@@ -29,18 +39,22 @@ export const pageAssistModel = async ({
   numGpu?: number
   numPredict?: number
   useMMap?: boolean
+  minP?: number
+  repeatPenalty?: number
+  repeatLastN?: number
+  tfsZ?: number
+  numKeep?: number
+  numThread?: number
+  useMlock?: boolean
 }) => {
-
   if (model === "chrome::gemini-nano::page-assist") {
     return new ChatChromeAI({
       temperature,
-      topK,
+      topK
     })
   }
 
-
   const isCustom = isCustomModel(model)
-
 
   if (isCustom) {
     const modelInfo = await getModelInfo(model)
@@ -50,7 +64,46 @@ export const pageAssistModel = async ({
       await urlRewriteRuntime(providerInfo.baseUrl || "")
     }
 
-    return new ChatOpenAI({
+    if (providerInfo.provider === "gemini") {
+      return new ChatGoogleAI({
+        modelName: modelInfo.model_id,
+        openAIApiKey: providerInfo.apiKey || "temp",
+        temperature,
+        topP,
+        maxTokens: numPredict,
+        configuration: {
+          apiKey: providerInfo.apiKey || "temp",
+          baseURL: providerInfo.baseUrl || "",
+          defaultHeaders: getCustomHeaders({
+            headers: providerInfo?.headers || []
+          })
+        }
+      }) as any
+    }
+
+    if (providerInfo.provider === "openrouter") {
+      return new CustomChatOpenAI({
+        modelName: modelInfo.model_id,
+        openAIApiKey: providerInfo.apiKey || "temp",
+        temperature,
+        topP,
+        maxTokens: numPredict,
+        configuration: {
+          apiKey: providerInfo.apiKey || "temp",
+          baseURL: providerInfo.baseUrl || "",
+          defaultHeaders: {
+            'HTTP-Referer': 'https://pageassist.xyz/',
+            'X-Title': 'Page Assist',
+            ...getCustomHeaders({
+              headers: providerInfo?.headers || []
+            })
+          }
+        },
+
+      }) as any
+    }
+
+    return new CustomChatOpenAI({
       modelName: modelInfo.model_id,
       openAIApiKey: providerInfo.apiKey || "temp",
       temperature,
@@ -59,26 +112,40 @@ export const pageAssistModel = async ({
       configuration: {
         apiKey: providerInfo.apiKey || "temp",
         baseURL: providerInfo.baseUrl || "",
-      },
+        defaultHeaders: getCustomHeaders({
+          headers: providerInfo?.headers || []
+        })
+      }
     }) as any
   }
 
 
 
+  const modelSettings = await getModelSettings(model)
+
+  const payload = {
+    keepAlive: modelSettings?.keepAlive || keepAlive,
+    temperature: modelSettings?.temperature || temperature,
+    topK: modelSettings?.topK || topK,
+    topP: modelSettings?.topP || topP,
+    numCtx: modelSettings?.numCtx || numCtx,
+    numGpu: modelSettings?.numGpu || numGpu,
+    numPredict: modelSettings?.numPredict || numPredict,
+    useMMap: modelSettings?.useMMap || useMMap,
+    minP: modelSettings?.minP || minP,
+    repeatPenalty: modelSettings?.repeatPenalty || repeatPenalty,
+    repeatLastN: modelSettings?.repeatLastN || repeatLastN,
+    tfsZ: modelSettings?.tfsZ || tfsZ,
+    numKeep: modelSettings?.numKeep || numKeep,
+    numThread: modelSettings?.numThread || numThread,
+    useMlock: modelSettings?.useMLock || useMlock
+  }
+
+
   return new ChatOllama({
     baseUrl,
-    keepAlive,
-    temperature,
-    topK,
-    topP,
-    numCtx,
-    seed,
     model,
-    numGpu,
-    numPredict,
-    useMMap,
+    seed,
+    ...payload,
   })
-
-
-
 }

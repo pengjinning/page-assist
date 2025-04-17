@@ -40,6 +40,7 @@
     "copyToClipboard": "Copia negli Appunti",
     "webSearch": "Ricerca nel Web",
     "regenerate": "Rigenera",
+    "continue": "Continua Risposta",
     "edit": "Modifica",
     "delete": "Elimina",
     "saveAndSubmit": "Salva e Invia",
@@ -67,8 +68,8 @@
                 "placeholder": "Inserisci la Temperatura (e.g. 0.7, 1.0)"
             },
             "numCtx": {
-                "label": "Dimensione del Contesto",
-                "placeholder": "Inserisci la Dimensione del Contesto (default: 2048)"
+                "label": "Dimensione della Finestra di Contesto (num_ctx)",
+                "placeholder": "Inserisci il valore della Finestra di Contesto (default: 2048)"
             },
             "numPredict": {
                 "label": "Token Massimi (num_predict)",
@@ -116,5 +117,10 @@
     },
     "pin": "Fissa",
     "unpin": "Rimuovi",
-    "generationInfo": "Informazioni sulla Generazione"
+    "generationInfo": "Informazioni sulla Generazione",
+    "sidebarChat": "Chat Laterale",
+    "reasoning": {
+        "thinking": "Pensando....",
+        "thought": "Pensato per {{time}}"
+    }
 }
